@@ -133,6 +133,10 @@ class ABTranslator:
             self.terminal_type_matrix[centre][window] = mode
 
         # Retrieve stored mode
+        if centre not in self.terminal_type_matrix:
+            return 2
+        if window not in self.terminal_type_matrix[centre]:
+            return 2
         ttype = self.terminal_type_matrix[centre][window]
 
         # Normalize: only 0 or 1 preserved, else map to 2
@@ -363,10 +367,10 @@ class ABTranslator:
         if self.m_iMsgCode == 202:
             outputStr+=f"0~|~"
         else:
-            outputStr+=f"{self.m_iTerminalType}~^~"
+            self.m_iTerminalType = self.get_terminal_type(pMsg, pMlog)
+            outputStr+=f"{self.m_iTerminalType}~|~"
 
-
-        # self.m_iTerminalType = self.get_terminal_type(pMsg, pMlog)
+        
 
         return outputStr
 

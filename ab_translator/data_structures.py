@@ -21,7 +21,7 @@ the original C++ names for easier cross-referencing.
 
 from ctypes import (
     LittleEndianStructure, LittleEndianUnion, c_short, c_ushort, c_ubyte, c_uint, c_int32,
-    c_longlong, c_ulonglong
+    c_longlong, c_ulonglong, c_char, c_byte
 )
 
 # C Type Mappings:
@@ -1009,6 +1009,228 @@ class LOGAB_CAN(LittleEndianStructure):
         ("data",        LOGAB_CAN_DATA),
     ]
 
+# Funds and flags for account access
+class ACU_TRAN_ACA(LittleEndianStructure):
+    """
+    struct ACU_TRAN_ACA
+    {
+        LONGLONG      fundd;    // funds available
+        //LONGLONG      bankgd;   // bank guarentee
+        LONGLONG		dpflag1 : 1;// bankgd stores dividend pocket (DP) instead of BG   // JC50
+        LONGLONG		cscflag1 : 1;// CSC account access                                // CS52
+        LONGLONG		ewalletflag1 : 1;// eWallet account access						  //SP21a
+        LONGLONG		reserved : 13;                                                    // JC50
+        LONGLONG      bankgd : 48;// bank guarentee (BG) or settled divdend pocket (DP) // JC50
+        LONGLONG      curDivd;  // unsettled dividend
+        LONGLONG      prvDivd;  // previous dividend
+        LONGLONG      sbPFtd;   // soccer fo payout forfeited
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("fundd", c_longlong),
+        ("dpflag1", c_longlong, 1),
+        ("cscflag1", c_longlong, 1),
+        ("ewalletflag1", c_longlong, 1),
+        ("reserved", c_longlong, 13),
+        ("bankgd", c_longlong, 48),
+        ("curDivd", c_longlong),
+        ("prvDivd", c_longlong),
+        ("sbPFtd", c_longlong),
+    ]
+
+ACU_BANK_SIZE      = 3
+ACU_BRANCH_SIZE    = 3
+ACU_BNKACCNUM_SIZE = 12
+
+# Bank account number components
+class ACU_BANKACCNUM(LittleEndianStructure):
+    """
+    struct ACU_BANKACCNUM
+    {
+    // char           bankAcns[ACU_BANK_ACN_SIZE+1];  // bank account #
+    char           banks[ACU_BANK_SIZE+1];            // bank code
+    char           branchs[ACU_BRANCH_SIZE+1];        // branch code
+    char           bankAccNums[ACU_BNKACCNUM_SIZE+1]; // bank account #
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("banks", c_char * (ACU_BANK_SIZE + 1)),
+        ("branchs", c_char * (ACU_BRANCH_SIZE + 1)),
+        ("bankAccNums", c_char * (ACU_BNKACCNUM_SIZE + 1)),
+    ]
+
+# Account-access normal data
+class LOGAB_ACA_NORMAL(LittleEndianStructure):
+    """
+    struct LOGAB_ACA_NORMAL
+    {
+        LONGLONG              novfodivd;   // novelty bet dividend  (added Q208)
+        LONGLONG              novinvd;     // novelty bet investment	(added Q208)
+        LONGLONG              sbfodivd;   // soccer fo bet dividend
+        LONGLONG              sbinvd;     // soccer bet investment
+        LONGLONG              depholdd;   // deposit withheld from withdrawal
+        LONGLONG              expd;       // daily expenditure
+        LONGLONG				dailyWtwd;  // daily withdrawal amount              // CS52
+        LONGLONG              onlWtwd;    // daily online withdrawal amount
+        LONGLONG              cshWtwd;    // daily cash withdrawal amount
+        unsigned char         wtwbu;		// daily withdrawal count
+        unsigned char         onlWtwbu;   // daily online withdrawal count
+        unsigned char         cshWtwbu;   // daily cash withdrawal count
+        unsigned short        sodTranwu;  // sod transaction #
+        struct ACU_TRAN_ACA   tran;
+        unsigned int          outstand1:1;    // outstanding transaction flag
+        struct ACU_BANKACCNUM	nbaacct1;	//primary nba bank account number	
+        unsigned char         nbachannel1;   // primary nba channel activated
+        struct ACU_BANKACCNUM	nbaacct2;	//second nba bank account number
+        unsigned char         nbachannel2;   // second nba channel activated
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("novfodivd", c_longlong),
+        ("novinvd", c_longlong),
+        ("sbfodivd", c_longlong),
+        ("sbinvd", c_longlong),
+        ("depholdd", c_longlong),
+        ("expd", c_longlong),
+        ("dailyWtwd", c_longlong),
+        ("onlWtwd", c_longlong),
+        ("cshWtwd", c_longlong),
+        ("wtwbu", c_ubyte),
+        ("onlWtwbu", c_ubyte),
+        ("cshWtwbu", c_ubyte),
+        ("sodTranwu", c_ushort),
+        ("tran", ACU_TRAN_ACA),
+        ("_pad0", c_byte * 3),
+        ("outstand1", c_ubyte, 1),
+        ("nbaacct1", ACU_BANKACCNUM),
+        ("nbachannel1", c_ubyte),
+        ("nbaacct2", ACU_BANKACCNUM),
+        ("nbachannel2", c_ubyte),
+    ]
+
+# Device-specific variants
+class LOGAB_ACA_VOICE(LittleEndianStructure):
+    """
+    struct LOGAB_ACA_VOICE
+    {
+        unsigned int          recTrklu;       // recorder track
+        unsigned int          seculu;         // security code
+        unsigned char          secu1:1;        // security code override
+        unsigned char          :7;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("recTrklu", c_uint),
+        ("seculu", c_uint),
+        ("secu1", c_ubyte, 1),
+        ("_pad", c_ubyte, 7),
+    ]
+
+class LOGAB_ACA_DID(LittleEndianStructure):
+    """
+    struct LOGAB_ACA_DID
+    {
+        unsigned char         citbu;          // device type, check DEV_TYP
+        unsigned char          oth1:1;         // other cit
+        unsigned char          :7;
+        unsigned int          seculu;         // security code
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("citbu", c_ubyte),
+        ("oth1", c_ubyte, 1),
+        ("_pad1", c_ubyte, 7),
+        ("seculu", c_uint),
+    ]
+
+class LOGAB_ACA_CB(LittleEndianStructure):
+    """
+    struct LOGAB_ACA_CB
+    {
+        unsigned LONGLONG     escdu;          // esc #
+        unsigned short        rejcodwu;       // CMS reject code
+        unsigned char          svt1:1;
+        unsigned char          oncourse1:1;
+        unsigned char          :6;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("escdu", c_ulonglong),
+        ("rejcodwu", c_ushort),
+        ("svt1", c_ubyte, 1),
+        ("oncourse1", c_ubyte, 1),
+        ("_pad", c_ubyte, 6),
+    ]
+
+class LOGAB_ACA_PINVER(LittleEndianStructure):
+    """
+    struct LOGAB_ACA_PINVER   //Account PIN Verification (Added 201108PSR)
+    {
+        unsigned char          balreq:1;		//Bit 0 = Balance required for the reply to caller
+        unsigned char          :7;			//Unused
+        unsigned int           seculu;        //security code
+    };
+    """
+    _fields_ = [
+        ("balreq", c_ubyte, 1),
+        ("_pad", c_ubyte, 7),
+        ("seculu", c_uint),
+    ]
+
+class LOGAB_ACA_DEV(LittleEndianUnion):
+    """
+    union LOGAB_ACA_DEV             // device info of account access
+    {
+    struct LOGAB_ACA_VOICE    voice;
+    struct LOGAB_ACA_DID      did;
+    struct LOGAB_ACA_CB       cb;
+    struct LOGAB_ACA_PINVER   pinver;  //Account PIN Verification (Added 201108PSR)
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("voice", LOGAB_ACA_VOICE),
+        ("did", LOGAB_ACA_DID),
+        ("cb", LOGAB_ACA_CB),
+        ("pinver", LOGAB_ACA_PINVER),
+    ]
+
+class LOGAB_ACA_DATA(LittleEndianUnion):
+    """
+    union LOGAB_ACA_DATA
+    {
+        struct LOGAB_SOURCE       busySrc;    // terminal accessing account for account active error
+        struct LOGAB_ACA_NORMAL   normal;     // for okay or other error
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("busySrc", LOGAB_SOURCE),
+        ("normal", LOGAB_ACA_NORMAL),
+    ]
+
+
+class LOGAB_ACA(LittleEndianStructure):
+    """
+    struct LOGAB_ACA
+    {
+    unsigned char         reqfromchannel:1;  // Q210 request from channel
+    union LOGAB_ACA_DEV   dev;            // device specific info.
+    union LOGAB_ACA_DATA  data;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("reqfromchannel", c_ubyte, 1),
+        ("dev", LOGAB_ACA_DEV),
+        ("data", LOGAB_ACA_DATA),
+    ]
 
 class LOGBT_AB(LittleEndianUnion):
     """
@@ -1058,8 +1280,9 @@ class LOGBT_AB(LittleEndianUnion):
     _pack_ = 1
     _fields_ = [
         # Omitting the "at" onwards as it is not relevant to APRace
+        ("aca", LOGAB_ACA),
         ("rac", LOGAB_RAC),
-        ("can", LOGAB_CAN)
+        ("can", LOGAB_CAN),
     ]
 
 class LOGAB_DATA(LittleEndianUnion):
