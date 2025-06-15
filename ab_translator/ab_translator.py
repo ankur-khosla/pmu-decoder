@@ -1,12 +1,13 @@
 import time
 import ctypes
 import math
-from constants import *
-from data_structures import LOGAB
-from del_sel import DelSel
-from msg import Msg
+from ab_translator.constants import *
+from ab_translator.data_structures import LOGAB
+from ab_translator.del_sel import DelSel
+from ab_translator.msg import Msg
+from collections import defaultdict
 
-class ABRaceCancel:
+class ABTranslator:
     def __init__(self):
         # Initialize all the fields that were in the C++ code
 
@@ -92,6 +93,20 @@ class ABRaceCancel:
 
         self.m_iBitmap: list[int] = [0] * 6
 
+        self.m_cAllupPoolType: list[int] = [0] * 6
+        self.m_iAllupRaceNo: list[int] = [0] * 6
+        self.m_cAllupBankerFlag: list[int] = [0] * 6
+        self.m_cAllupFieldFlag: list[int] = [0] * 6
+        self.m_cAllupMultiFlag: list[int] = [0] * 6
+        self.m_cAllupMultiBankerFlag: list[int] = [0] * 6
+        self.m_cAllupRandomFlag: list[int] = [0] * 6
+        self.m_iNoOfCombination: list[int] = [0] * 6
+        self.m_iPayFactor: list[int] = [0] * 6
+        self.m_iAllupBankerBitmap: list[int] = [0] * 6
+        self.m_iAllupSelectBitmap: list[int] = [0] * 6
+
+        self.terminal_type_matrix = defaultdict(lambda: defaultdict(int))
+
     def format_msg_time(self, msg_time: int) -> str:
         tm_time = time.localtime(msg_time)
         return (
@@ -102,6 +117,29 @@ class ABRaceCancel:
             f"{tm_time.tm_min:02d}:"
             f"{tm_time.tm_sec:02d}"
         )
+    
+    def get_terminal_type(self, msg:Msg, pMlog: LOGAB):
+
+        # Only handle CB_BT source messages
+        if pMlog.hdr.source.srcTypebu != LOGAB_SRC_CB_BT:
+            return 0
+
+        centre = pMlog.hdr.source.data.cbBt.centrelu
+        window = pMlog.hdr.source.data.cbBt.windowwu
+
+        # On account access, record input mode
+        if pMlog.hdr.codewu == LOGAB_CODE_ACA:
+            mode = pMlog.data.bt.aca.dev.cb.svt1
+            self.terminal_type_matrix[centre][window] = mode
+
+        # Retrieve stored mode
+        ttype = self.terminal_type_matrix[centre][window]
+
+        # Normalize: only 0 or 1 preserved, else map to 2
+        if ttype not in (0, 1):
+            return 2
+        return ttype
+
     
     def packHeader(self, pMlog: LOGAB, pMsg: Msg) -> str:
         self.m_iSysNo = pMsg.m_iSysNo
@@ -280,7 +318,7 @@ class ABRaceCancel:
             f"{self.m_iOffsetUnit}~|~"
             f"{self.m_iTranNo}~|~"
             f"{self.m_sTime}~|~"
-            f"{self.m_iLastLogSeq}~|~"
+            f"{self.m_iLastLogSeq if self.m_iLastLogSeq < 2147483647 else 2147483647}~|~"
             f"{self.m_iMsnNo}~|~"
             f"{self.m_iExtSysType}~|~"
             f"{self.m_iCatchUp}~|~"
@@ -325,7 +363,10 @@ class ABRaceCancel:
         if self.m_iMsgCode == 202:
             outputStr+=f"0~|~"
         else:
-            outputStr+=f"{self.m_iTerminalType}~|~"
+            outputStr+=f"{self.m_iTerminalType}~^~"
+
+
+        # self.m_iTerminalType = self.get_terminal_type(pMsg, pMlog)
 
         return outputStr
 
@@ -368,7 +409,7 @@ class ABRaceCancel:
 
             self.m_cLoc = pMlog.data.bt.rac.tran.bet.d.var.a.loc
             self.m_cDay = pMlog.data.bt.rac.tran.bet.d.var.a.day
-            self.m_sFormula = self.get_form(self.m_cFormula)
+            self.m_sFormula = DelSel.get_form(self.m_cFormula)
 
             for a in range(6):
                 sel = pMlog.data.bt.rac.tran.bet.d.var.a.sel[a]

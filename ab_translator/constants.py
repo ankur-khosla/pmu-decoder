@@ -182,3 +182,6 @@ ACU_CODE_ESC_LOT_MD = 47
 
 # Maximum defined code
 ACU_MAX_CODE        = ACU_CODE_DIV_PUR2
+
+
+LOGAB_CODE_ACA = 3      # account access via voice

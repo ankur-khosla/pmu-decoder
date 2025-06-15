@@ -1,7 +1,5 @@
-
-
-from constants import *
-from data_structures import LOGAB
+from ab_translator.constants import *
+from ab_translator.data_structures import LOGAB
 
 class DelSel:
     # @staticmethod
@@ -208,6 +206,48 @@ class DelSel:
                 sels.append(f"{jwu:02d}")
 
         return '+'.join(sels)
+    
+    @staticmethod
+    def fmt_ext(pMlog, numofbmp: int, numofbnk: int) -> str:
+        sels = []
+        ind = pMlog.data.bt.rac.tran.bet.d.var.es.ind
+        sellu = pMlog.data.bt.rac.tran.bet.d.var.es.sellu
+
+        # single/single banker TCE/QTT/FCT bet
+        if ind.bnk1 == 0 and ind.fld1 == 0 and ind.mbk1 == 0 and ind.mul1 == 0:
+            for i in range(numofbmp):
+                sels.append(DelSel.fmt_sln(pMlog, i, False, 0))
+            return ''.join(sels).rstrip('+')
+
+        # multi-banker bet
+        if (ind.mbk1 & 0x01) == 1:
+            for i in range(numofbmp):
+                sels.append(DelSel.fmt_sln(pMlog, i, False, 0).rstrip('+'))
+                sels.append('>')
+            return ''.join(sels).rstrip('>')
+
+        # multiple bet (non-banker)
+        if (ind.mul1 & 0x01) == 1 and (ind.bnk1 & 0x01) == 0:
+            for i in range(numofbmp):
+                sels.append(DelSel.fmt_sln(pMlog, i, False, 0))
+            return ''.join(sels).rstrip('+')
+
+        # single/multiple banker
+        if (ind.bnk1 & 0x01) == 1:
+            numofbnkbmp = 0
+            for i in range(numofbmp):
+                if sellu[i] == 0:
+                    break
+                numofbnkbmp += 1
+
+            for i in range(numofbmp):
+                sels.append(DelSel.fmt_sln(pMlog, i, False, 0).rstrip('+'))
+                if i == numofbnkbmp - 2:
+                    sels.append('>')
+
+            return ''.join(sels).rstrip('>')
+
+        return ''.join(sels)
     
     @staticmethod
     def fmt_qin(pMlog: LOGAB, numofbnk: int, numofbmp: int, bmpposwu: int, allupt: bool, idwu: int) -> str:
