@@ -127,5 +127,58 @@ BETTYP_ATC   = 25
 BETTYP_AQT   = 26
 
 
-
 RDS_MAXFLD   =  62  # max. field size. support 34 starters
+
+
+# Cancel codes
+ACU_CODE_LOT        = 1   # lottery
+ACU_CODE_RAC        = 2   # racing
+ACU_CODE_WTW        = 3   # withdrawal
+ACU_CODE_CAN        = 4   # cancel
+ACU_CODE_SB         = 5   # soccer bet
+ACU_CODE_ACA_CB     = 6   # CB account access
+ACU_CODE_ACA_VOICE  = 7   # voice account access
+ACU_CODE_ACA_CIT    = 8   # CIT account access
+ACU_CODE_ACA_MAT    = 9   # MAT account access
+ACU_CODE_ACA_AUTO   = 10  # auto account access
+ACU_CODE_CIT_DEP    = 11  # CIT/ESC deposit
+ACU_CODE_CIT_DEPRFD = 12  # CIT/ESC deposit refund
+ACU_CODE_CIT_FEE    = 13  # CIT annual fee
+ACU_CODE_CIT_FEERFD = 14  # CIT annual fee refund
+ACU_CODE_DEP_TSN    = 15  # CB deposit with TSN (incl. payout)
+ACU_CODE_DEP_ATM    = 16  # batch deposit
+ACU_CODE_DEP        = 17  # non-cash deposit (without TSN)
+ACU_CODE_HSTACC     = 18  # history account SOD
+ACU_CODE_DEBIT      = 19  # debit adjustment
+ACU_CODE_CREDIT     = 20  # credit adjustment
+ACU_CODE_ACR        = 21  # account release
+ACU_CODE_SOD        = 22  # SOD
+ACU_CODE_RIM        = 23  # bank guarantee reimbursement outstanding
+ACU_CODE_DIV        = 24  # dividend settled tonight
+ACU_CODE_DIV_PUR    = 25  # dividend of purged transaction
+ACU_CODE_LOT_SI     = 26  # unsatisfied SI lottery
+ACU_CODE_PANCAP     = 27  # PAN capture
+ACU_CODE_DFT        = 28  # dividend forfeited
+ACU_CODE_AFR        = 29  # CIT annual fee reverse
+ACU_CODE_CHARGE     = 30  # service charge
+ACU_CODE_DIV_OS     = 31  # dividend from O/S ESC transaction
+ACU_CODE_STMCHG     = 32  # statement charge
+ACU_CODE_CIT_PDRFD  = 33  # progressive CIT deposit refund
+ACU_CODE_OLDTB      = 34  # legacy system transaction
+ACU_CODE_CIT_DEPFFT = 35  # CIT/ESC deposit forfeit
+ACU_CODE_HSTRAC2    = 36  # RAC in history file
+ACU_CODE_DIV_PUR2   = 37  # purged transaction after Q206
+
+# ESC-specific codes
+ACU_CODE_LOT2       = 38  # used by ESC
+ACU_CODE_RAC2       = 39  # used by ESC
+ACU_CODE_SB2        = 40  # used by ESC
+ACU_CODE_DEP_TSN2   = 41  # used by ESC
+ACU_CODE_HSTRAC3    = 42  # used by ESC
+
+# Miscellaneous
+ACU_CODE_AB_LOT_MD  = 46
+ACU_CODE_ESC_LOT_MD = 47
+
+# Maximum defined code
+ACU_MAX_CODE        = ACU_CODE_DIV_PUR2

@@ -662,6 +662,354 @@ class LOGAB_RAC(LittleEndianStructure):
         ("tran", ACU_TRAN_RAC2),
     ]
 
+class ACU_TRAN_DEP(LittleEndianStructure):
+    """
+    struct ACU_TRAN_DEP
+    {
+    int32_t             holdtime;      // release time for withdrawal
+    unsigned LONGLONG  amountdu;      // amount
+    unsigned LONGLONG  chargedu;      // service charge
+    unsigned char      typebu;        // deposit type
+        #define ACU_DEP_CASH  1
+        #define ACU_DEP_CIT   2
+        #define ACU_DEP_MPT   3
+        #define ACU_DEP_ATM   4
+        #define ACU_DEP_PAY   5         // payout deposit
+        #define ACU_DEP_CHQ   6         // cheque
+        #define ACU_DEP_ITN   7         // internet
+        #define ACU_DEP_FPS   22         // FPS
+    unsigned char       hold1:1;       // withholdable
+    unsigned char       cancel1:1;     // cancelled
+    unsigned char       reversed1:1;   // reversed
+    unsigned char       released1:1;   // released (ignore hold time)
+    //unsigned char       secondnba1:1;   // Transaction on secondary NBA
+    //unsigned char       ertregno1:1;   // ERT registration number captured
+    unsigned char       csctrn:1;   // Transaction by CSC (Added 201108PSR)
+    unsigned char      srcbu;         // source of deposit; defined in LOGDEF_AB.H
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("holdtime",   c_int32),       # release time for withdrawal
+        ("amountdu",   c_ulonglong),   # amount
+        ("chargedu",   c_ulonglong),   # service charge
+        ("typebu",     c_ubyte),       # deposit type (ACU_DEP_…)
+        # bit‐fields share one byte:
+        ("hold1",      c_ubyte, 1),    # withholdable
+        ("cancel1",    c_ubyte, 1),    # cancelled
+        ("reversed1",  c_ubyte, 1),    # reversed
+        ("released1",  c_ubyte, 1),    # released (ignore hold time)
+        ("csctrn",     c_ubyte, 1),    # transaction by CSC
+        ("_reserved",  c_ubyte, 3),    # padding
+        ("srcbu",      c_ubyte),       # source of deposit
+    ]
+
+class BETABLOT(LittleEndianStructure):
+    """
+    struct BETABLOT
+    {
+        unsigned char   srcbu:7;    // source of sell (Changed 201108PSR)
+        unsigned char   csctrn:1;  // Transaction with CSC Card (Added 201108PSR)
+        //unsigned short  yearwu;   // year
+        //unsigned short  drawwu;   // draw #
+        //unsigned short  typewu;   // type of lottery
+        struct BETDATA  d;        // data
+    };    
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("srcbu",  c_ubyte, 7),  # source of sell (7 bits)
+        ("csctrn", c_ubyte, 1),  # CSC card transaction (1 bit)
+        ("d",      BETDATA),     # bet data
+    ]
+
+class ACU_TRAN_LOT2(LittleEndianStructure):
+    """
+    struct ACU_TRAN_LOT2
+    {
+    unsigned int     content;
+    struct BETABLOT  bet;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("content", c_uint),   # content field
+        ("bet",     BETABLOT), # bet details
+    ]
+
+class LOGAB_LOT(LittleEndianStructure):
+    """
+    struct LOGAB_LOT
+    {
+    unsigned short        indexwu;    // lottery index
+    unsigned char			ndrawbu;		// number of draw
+    unsigned short        selwu;      // error selection
+    unsigned char			versionbu;	// version number
+    unsigned int          offsetlu;   // offset of bet in file
+    unsigned char			multidraw:1;  // multi-draw flag q207
+    unsigned char			crossSellFl:1;  // cross sell indicator 
+    unsigned char			test:6;
+    unsigned int          mintktcost;   // (201108PSR, Reject=min total ticket;Success=Transfer Amt;Other Situation=0)
+    struct ACU_TRAN_LOT2   tran;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("indexwu",    c_ushort),    # lottery index
+        ("ndrawbu",    c_ubyte),     # number of draw
+        ("selwu",      c_ushort),    # error selection
+        ("versionbu",  c_ubyte),     # version number
+        ("offsetlu",   c_uint),      # offset of bet in file
+        ("multidraw",  c_ubyte, 1),  # multi-draw flag q207
+        ("crossSellFl",c_ubyte, 1),  # cross sell indicator
+        ("test",       c_ubyte, 6),  # reserved
+        ("mintktcost", c_uint),      # min total ticket / transfer amt
+        ("tran",       ACU_TRAN_LOT2),
+    ]
+
+class ACU_TRAN_WTW(LittleEndianStructure):
+    """
+    struct ACU_TRAN_WTW
+    {
+    LONGLONG           amountd;   // amount
+    unsigned LONGLONG  chargedu;  // service charge
+    unsigned char      typebu;    // withdrawal type  
+        #define ACU_WTW_AUTOPAY  1
+        #define ACU_WTW_CHEQUE   2
+        #define ACU_WTW_BANK     3  // online 
+        #define ACU_WTW_CASH     4
+        #define ACU_WTW_FPS		 6	//FPS
+    unsigned char      actBybu;   // activated by
+        #define ACU_WTW_TBTR     1
+        #define ACU_WTW_MAT      2
+        #define ACU_WTW_SI       3
+        #define ACU_WTW_AUTO     4
+        #define ACU_WTW_MPT      5
+        #define ACU_WTW_CIT      6
+        #define ACU_WTW_CB       7
+        #define ACU_WTW_ITN      8  // internet
+    unsigned char      srcbu;     // source of withdrawal; defined in LOGDEF_AB.H
+    unsigned char       cancel1:1; // cancelled
+    // unsigned char       ertcaptured1:1; // ERT registration number captured
+    unsigned char       csctrn:1;  // Transaction with CSC Card (Added 201108PSR)
+    unsigned char       undo :1; //undo added for sp21a
+    unsigned char       :5;        // Unused (Changed 201108PSR)
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("amountd",   c_longlong),    # amount
+        ("chargedu",  c_ulonglong),   # service charge
+        ("typebu",    c_ubyte),       # withdrawal type (ACU_WTW_…)
+        ("actBybu",   c_ubyte),       # activated by (ACU_WTW_…)
+        ("srcbu",     c_ubyte),       # source of withdrawal
+        # bit‐fields share one byte:
+        ("cancel1",   c_ubyte, 1),    # cancelled
+        ("csctrn",    c_ubyte, 1),    # CSC card transaction
+        ("undo",      c_ubyte, 1),    # undo (SP21a)
+        ("_reserved", c_ubyte, 5),    # unused
+    ]
+
+class LOGAB_WTW_UNION(LittleEndianUnion):
+    """
+    See LOGAB_WTW below for the union definition
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("__padding_LOGAB_EPS_TB", c_ubyte * 1912),
+        ("__padding_LOGAB_FPS", c_ubyte * 792),
+        ("divprocddtlu", c_uint),    # Amount in dollar deducted from dividend pocket
+    ]
+
+class LOGAB_WTW(LittleEndianStructure):
+    """
+    struct LOGAB_WTW
+    {   
+        struct ACU_TRAN_WTW   tran;       // withdrawal transaction in account file
+        union {
+            struct LOGAB_EPS_TB   eps;      // eps information                 // EH07
+            struct LOGAB_FPS		fps;		// FPS
+            unsigned int			divprocddtlu;  // Amount in dollar deducted from dividend pocket;0=normal a/c> 0 for IBT anonymous a / c only
+        };
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("tran", ACU_TRAN_WTW),      # withdrawal transaction in account file
+        ("_union", LOGAB_WTW_UNION),  # nested union of eps/fps/divprocddtlu
+    ]
+
+class LOGAB_SBMSG(LittleEndianStructure):
+    """
+    struct LOGAB_SBMSG
+    {
+        unsigned int		minTktTot;                   // Q310 Minimun Ticket Total 
+        unsigned short        lenwu;                      // terminal data length
+        unsigned char         trmDatabu[450];  // terminal data [variable]
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("minTktTot", c_uint),
+        ("lenwu",     c_ushort),
+        ("trmDatabu", c_ubyte * 450),
+    ]
+
+class ACU_TRAN_SB2(LittleEndianStructure):
+    """
+    struct ACU_TRAN_SB2
+    {
+    union  TSN      tsn;
+    unsigned char   srcbu:7;    // source of sell (Changed 201108PSR)
+    unsigned char   csctrn:1;  // Transaction with CSC Card (Added 201108PSR)
+    struct BETDATA  bet;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("_padding_TSN", c_ubyte * 10),         # transaction sequence number union
+        ("srcbu",  c_ubyte, 7),    # source of sell (7 bits)
+        ("csctrn", c_ubyte, 1),    # transaction with CSC card (1 bit)
+        ("bet",    BETDATA),       # bet details
+    ]
+
+class LOGAB_SBBET(LittleEndianStructure):
+    """
+    struct LOGAB_SBBET
+    {
+    unsigned short          oddOut1:1;      // odds outdated
+    unsigned short          woodds1:1;      // selling without odds
+    unsigned short          bonus1:1;       // bonus flag
+    unsigned short          rconfirm1:1;    // require confirm by customer
+    unsigned short          chgodds1:1;     // odds changed
+    unsigned short          chgubet1:1;     // unit bet changed
+    unsigned short          intercept1:1;   // bet intercept at rm
+    unsigned short          settle1:1;      // bet settled with SB
+    unsigned short          abort1:1;       // user abort request recieved
+    unsigned short          confirm1:1;     // user confirmed request
+    unsigned short		  crossSellFl:1; // cross sell indicator
+    unsigned short          :5;
+    struct SBLOG_BET_ERR  err;            // sb account type for some error (Reviewed 201108PSR)
+    unsigned char         sbtypbu;        // sb account type
+    unsigned char			sbmsgver;		// sb message version no.	Q405
+    unsigned short        lenwu;          // sb bet size
+    struct ACU_TRAN_SB2    tran;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("oddOut1",     c_ushort, 1),
+        ("woodds1",     c_ushort, 1),
+        ("bonus1",      c_ushort, 1),
+        ("rconfirm1",   c_ushort, 1),
+        ("chgodds1",    c_ushort, 1),
+        ("chgubet1",    c_ushort, 1),
+        ("intercept1",  c_ushort, 1),
+        ("settle1",     c_ushort, 1),
+        ("abort1",      c_ushort, 1),
+        ("confirm1",    c_ushort, 1),
+        ("crossSellFl", c_ushort, 1),
+        ("_reserved",   c_ushort, 5),
+        ("_padding_SBLOG_BET_ERR", c_ubyte * 12),  # sb account error info
+        ("sbtypbu",     c_ubyte),
+        ("sbmsgver",    c_ubyte),
+        ("lenwu",       c_ushort),
+        ("tran",        ACU_TRAN_SB2),
+    ]
+
+class LOGAB_SB(LittleEndianUnion):
+    """
+    union LOGAB_SB
+    {
+        struct LOGAB_SBMSG   msg;         // terminal message
+        struct LOGAB_SBBET   bet;         // reply
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("msg", LOGAB_SBMSG),   # terminal message
+        ("bet", LOGAB_SBBET),   # reply
+    ]
+
+class LOGAB_DEP(LittleEndianStructure):
+    """
+    struct LOGAB_DEP
+    {
+    struct ACU_TRAN_DEP   tran;       // transaction in account file
+    union LOGAB_DEP_DATA  data;       // deposit detail
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("tran", ACU_TRAN_DEP),
+        ("_padding_LOGAB_DEP_DATA", c_ubyte * 1912)
+    ]
+
+class LOGAB_CAN_DATA(LittleEndianUnion):
+    """
+    union LOGAB_CAN_DATA
+    {
+    struct LOGAB_LOT    lot;
+    struct LOGAB_RAC    rac;
+    struct LOGAB_WTW    wtw;
+    union  LOGAB_SB     sb;
+    struct LOGAB_DEP    dep;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("lot", LOGAB_LOT),
+        ("rac", LOGAB_RAC),
+        ("wtw", LOGAB_WTW),
+        ("sb",  LOGAB_SB),
+        ("dep", LOGAB_DEP),
+    ]
+
+class LOGAB_CAN(LittleEndianStructure):
+    """
+    struct LOGAB_CAN
+    {
+    unsigned short        tranwu;         // cancelled transaction number
+    unsigned short        codewu;         // cancelled transaction code ACU_CODE_...
+    unsigned char         filebu;         // file # of account file [0=overflow]
+    unsigned int          blocklu;        // block # of account file
+    unsigned short        offwu;          // offset to account unit
+    LONGLONG				rcltokend;		// token obtain from recall for cancel
+
+    //unsigned int			token;			// q207
+    int32_t				businessDate;	// q207
+
+    unsigned char         otherUnit1:1;   // cancel on other unit
+    unsigned char         canprv1:1;      // cancel earlier call
+    unsigned char         byTsn1:1;       // cancel by TSN (ESC mode only)
+    unsigned char			canPrevDay:1;	// cancel previous day q207
+    LONGLONG				txnidd;			// SP3:cancelled transaction id
+    unsigned int			verifierlu;		// SP3: segregate from block / offset
+
+    union LOGAB_CAN_DATA  data;
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("tranwu",      c_ushort),    # cancelled transaction number
+        ("codewu",      c_ushort),    # cancelled transaction code ACU_CODE_...
+        ("filebu",      c_ubyte),     # file # of account file [0=overflow]
+        ("blocklu",     c_uint),      # block # of account file
+        ("offwu",       c_ushort),    # offset to account unit
+        ("rcltokend",   c_longlong),  # token obtain from recall for cancel
+        ("businessDate",c_int32),     # q207
+        # bit‐fields packed into one byte:
+        ("otherUnit1",  c_ubyte, 1),  # cancel on other unit
+        ("canprv1",     c_ubyte, 1),  # cancel earlier call
+        ("byTsn1",      c_ubyte, 1),  # cancel by TSN (ESC mode only)
+        ("canPrevDay",  c_ubyte, 1),  # cancel previous day q207
+        ("_reserved",   c_ubyte, 4),  # unused bits
+        ("txnidd",      c_longlong),  # SP3: cancelled transaction id
+        ("verifierlu",  c_uint),      # SP3: segregate from block / offset
+        ("data",        LOGAB_CAN_DATA),
+    ]
+
+
 class LOGBT_AB(LittleEndianUnion):
     """
     // BT transactions
@@ -710,7 +1058,8 @@ class LOGBT_AB(LittleEndianUnion):
     _pack_ = 1
     _fields_ = [
         # Omitting the "at" onwards as it is not relevant to APRace
-        ("rac", LOGAB_RAC)
+        ("rac", LOGAB_RAC),
+        ("can", LOGAB_CAN)
     ]
 
 class LOGAB_DATA(LittleEndianUnion):

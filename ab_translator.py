@@ -1,13 +1,12 @@
-import Msg
 import time
 import ctypes
 import math
 from constants import *
 from data_structures import LOGAB
+from del_sel import DelSel
+from msg import Msg
 
-
-
-class ABRace:
+class ABRaceCancel:
     def __init__(self):
         # Initialize all the fields that were in the C++ code
 
@@ -104,7 +103,7 @@ class ABRace:
             f"{tm_time.tm_sec:02d}"
         )
     
-    def packHeader(self, cpStoreProcName: str, pMlog: LOGAB, pMsg: Msg) -> str:
+    def packHeader(self, pMlog: LOGAB, pMsg: Msg) -> str:
         self.m_iSysNo = pMsg.m_iSysNo
         self.m_iMsgOrderNo = self.m_iLoggerMsgOrderNo
         self.m_sSysName = pMsg.m_iSysName
@@ -331,7 +330,7 @@ class ABRace:
         return outputStr
 
 
-    def translate_action(self, pMsg: Msg, pMlog: LOGAB) -> str:
+    def translate_abrace(self, pMsg: Msg, pMlog: LOGAB) -> str:
         self.m_itotalPay = pMlog.data.bt.rac.tran.bet.d.hdr.totdu
         self.m_iTotalCost = pMlog.data.bt.rac.tran.bet.d.hdr.costlu
         self.m_iFlexiBetFlag = pMlog.data.bt.rac.tran.bet.d.hdr.betinvcomb.flexi.flexibet
@@ -454,7 +453,7 @@ class ABRace:
                 f"{self.m_cRandomFlag}~|~"
             )
 
-        m_cSelections = self.get_sel(pMlog, self.m_cBetType)
+        m_cSelections = DelSel.get_sel(pMlog, self.m_cBetType)
         trun_sel = m_cSelections[:1000] if len(m_cSelections) > 1000 else m_cSelections
         outputStr += f"{trun_sel}~|~"
 
@@ -498,47 +497,6 @@ class ABRace:
         )
         return outputStr
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def get_bet_type(self, bet_type: int) -> str:
         return {
             BETTYP_WINPLA: "W-P",
@@ -569,296 +527,253 @@ class ABRace:
             BETTYP_IWN:    "IWN",
         }.get(bet_type, "XXXX")
 
-    def get_sel(self, pMlog: LOGAB, m_cType: int) -> str:
-        # char legs[5], sels[1024]
-        legs = ""
-        sels = ""
-        indexbu = 0
 
-        if m_cType == BETTYP_AWP:
-            indexbu = pMlog.data.bt.rac.tran.bet.d.var.a.fmlbu
-            legs = self.get_form(indexbu)  # assumed to return string
-            sels = self.fmt_aup(pMlog)     # assumed to return string
-            return sels.strip()
+    def translate_abcancel(self, pMsg: Msg, pMlog: LOGAB) -> str:
 
-        elif m_cType in (BETTYP_MK6, BETTYP_PWB):
-            # Placeholder for future implementation:
-            # sels = fmtMk6(pMlog, pMlog.d.bt.lot.tsn.s.w12.type3)
-            # return osi_atrim(sels)
-            return ""
+        self.m_iErrorCode = pMsg.m_iMsgErrwu
 
-        elif m_cType in (
-            BETTYP_WINPLA, BETTYP_WIN, BETTYP_PLA, BETTYP_QIN, BETTYP_QPL,
-            BETTYP_DBL, BETTYP_TCE, BETTYP_FCT, BETTYP_QTT, BETTYP_DQN,
-            BETTYP_TBL, BETTYP_TTR, BETTYP_6UP, BETTYP_DTR, BETTYP_TRIO,
-            BETTYP_QINQPL, BETTYP_FF, BETTYP_BWA, BETTYP_CWA,
-            BETTYP_CWB, BETTYP_CWC, BETTYP_IWN
-        ):
-            sels = self.fmt_nrm(pMlog)  # assumed to return string
-            return sels.strip()
+        self.m_iTranNo = pMlog.data.bt.can.tranwu
+        self.m_iCanCode = pMlog.data.bt.can.codewu
+        self.m_cFileNo = pMlog.data.bt.can.filebu
+        self.m_iBlkNo = pMlog.data.bt.can.blocklu
+        self.m_cOffUnit = pMlog.data.bt.can.offwu
+        self.m_cOthUnit = pMlog.data.bt.can.otherUnit1
+        self.m_cEarCall = pMlog.data.bt.can.canprv1
+        self.m_cTsnFlag = pMlog.data.bt.can.byTsn1
+        self.m_cCanPrevDay = pMlog.data.bt.can.canPrevDay
 
-        else:
-            return ""
-        
-    def get_form(self, index: int) -> str:
-        formula_list = [
-            "2x1", "2x3", 
-            "3x1", "3x3", "3x4", "3x6", "3x7",
-            "4x1", "4x4", "4x5", "4x6", "4x10", "4x11", "4x14", "4x15",
-            "5x1", "5x5", "5x6", "5x10", "5x15", "5x16", "5x20", "5x25", "5x26", "5x30", "5x31",
-            "6x1", "6x6", "6x7", "6x15", "6x20", "6x21", "6x22", "6x35", "6x41", "6x42", "6x50", "6x56", "6x57", "6x62", "6x63"
-        ]
-        return formula_list[index] if 0 <= index < len(formula_list) else ""
-    
-    def fmt_aup(self, pMlog) -> str:
-        sels = ""
-        numofbnkbmp = 0
-        selections = pMlog.data.bt.rac.tran.bet.d.var.a.sel
-        event_count = pMlog.data.bt.rac.tran.bet.d.var.a.evtbu
 
-        for a in range(event_count):
-            sel = selections[a]
-            race_no = sel.racebu
-            bettype = sel.bettypebu
+        outputStr = (
+            f"{self.m_iTranNo}~|~"
+            f"{self.m_iCanCode}~|~"
+            f"{self.m_cFileNo}~|~"
+            f"{self.m_iBlkNo}~|~"
+            f"{self.m_cOffUnit}~|~"
+            f"{self.m_cOthUnit}~|~"
+            f"{self.m_cEarCall}~|~"
+            f"{self.m_cTsnFlag}~|~"
+        )
 
-            if bettype in (
-                BETTYP_WINPLA, BETTYP_WIN, BETTYP_PLA,
-                BETTYP_BWA, BETTYP_CWA, BETTYP_CWB, BETTYP_CWC
-            ):
-                if a == 0:
-                    sels += f"{race_no}*"
-                else:
-                    sels += f"{race_no}*"
+        tm_date = time.localtime(pMlog.data.bt.can.businessDate)
+        self.m_sTranDate = f"{tm_date.tm_mday}-{MONTHS[tm_date.tm_mon-1]}-{tm_date.tm_year}"
 
-                sels += self.fmt_sln(pMlog, 0, True, a)
-                sels += self.fmt_ind(pMlog, True, a)
-                sels += "/"
+        # Cancel Lottery
+        if self.m_iCanCode in (ACU_CODE_LOT, ACU_CODE_LOT2,
+                                ACU_CODE_AB_LOT_MD, ACU_CODE_ESC_LOT_MD):
+            
+            self.m_iLIndex       = pMlog.data.bt.can.data.lot.indexwu
+            self.m_iLErrSel      = pMlog.data.bt.can.data.lot.selwu
+            self.m_iLOffset      = pMlog.data.bt.can.data.lot.offsetlu
+            self.m_cLSrcSell     = pMlog.data.bt.can.data.lot.tran.bet.srcbu
 
-            elif bettype in (
-                BETTYP_IWN, BETTYP_QIN, BETTYP_QPL, BETTYP_TRIO,
-                BETTYP_QINQPL, BETTYP_FF
-            ):
-                if a == 0:
-                    sels += f"{race_no}*"
-                else:
-                    sels += f"{race_no}*"
+            self.m_iLDrawYr      = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.yearwu
+            self.m_iLDrawNo      = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.drawwu
+            self.m_iLDrawType    = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.typewu
 
-                if sel.ind.bnk1 & 0x01:
-                    numofbnkbmp = 1
-
-                sels += self.fmt_qin(pMlog, numofbnkbmp, 2, 0, True, a)
-                sels += self.fmt_ind(pMlog, True, a)
-                sels += "/"
-
-            elif bettype == BETTYP_FCT:
-                if a == 0:
-                    sels += f"{race_no}*"
-                else:
-                    sels += f"{race_no}*"
-
-                sels += self.fmt_ext_aup(pMlog, 2, a)
-                sels += self.fmt_ind(pMlog, True, a)
-                sels += "/"
-
-            # else: ignore other bettypes
-
-        return sels.rstrip("/")  # remove trailing slash
-    
-    def fmt_sln(self, pMlog: LOGAB, bmppos: int, allupt: bool, idwu: int) -> str:
-        sels = ""
-        fldwu = RDS_MAXFLD  # maximum number of selection fields
-
-        if not allupt:  # standard/exotic bet
-            bitmap = pMlog.data.bt.rac.tran.bet.d.var.es.sellu[bmppos]
-            for jwu in range(1, fldwu + 1):
-                if bitmap & (1 << jwu):
-                    sels += f"{jwu:02d}+"
-        else:  # allup bet
-            bitmap = pMlog.data.bt.rac.tran.bet.d.var.a.sel[idwu].sellu[bmppos]
-            for jwu in range(1, fldwu + 1):
-                if bitmap & (1 << jwu):
-                    sels += f"{jwu}+"
-
-        # cancel last '+' unless it's TCE, QTT, or FCT under specific conditions
-        bettype_hdr = pMlog.data.bt.rac.tran.bet.d.hdr.bettypebu
-        bettype_leg = pMlog.data.bt.rac.tran.bet.d.var.a.sel[idwu].bettypebu
-
-        if bettype_hdr not in (BETTYP_TCE, BETTYP_QTT) and (
-            (not allupt and bettype_hdr != BETTYP_FCT) or
-            (allupt and bettype_leg != BETTYP_FCT)
-        ):
-            sels = sels.rstrip('+')
-
-        return sels
-    
-    def fmt_ind(self, pMlog: LOGAB, allupt: bool, idwu: int) -> str:
-        result = ""
-
-        if not allupt:
-            fld_flag = pMlog.data.bt.rac.tran.bet.d.var.es.ind.fld1 & 0x01
-            mul_flag = pMlog.data.bt.rac.tran.bet.d.var.es.ind.mul1 & 0x01
-
-            if fld_flag:
-                result += "F"
-            if mul_flag:
-                result += "M"
-        else:
-            sel = pMlog.data.bt.rac.tran.bet.d.var.a.sel[idwu].ind
-            if sel.fld1 & 0x01:
-                result += "F"
-            if sel.mul1 & 0x01:
-                result += "M"
-
-        return result
-    
-    def fmt_qin2(self, pMlog: LOGAB, numofbnk: int, numofbmp: int, bmpposwu: int, allupt: bool, idwu: int) -> str:
-        result = ""
-
-        if numofbnk == 0:
-            result += self.fmtSln2(pMlog, bmpposwu, False, 0)
-        else:
-            for iwu in range(numofbmp):
-                part = self.fmtSln2(pMlog, iwu + bmpposwu, False, 0)
-                if iwu > 0:
-                    result += ">"
-                result += part
-
-        return result
-    
-    def fmt_sln2(self, pMlog: LOGAB, bmppos: int, allupt: bool, idwu: int) -> str:
-        max_field = RDS_MAXFLD
-        sels = []
-        bitmap = pMlog.data.bt.rac.tran.bet.d.var.es.betexbnk.sellu[bmppos]
-
-        for jwu in range(1, max_field + 1):
-            if (bitmap & (1 << jwu)) != 0:
-                sels.append(f"{jwu:02d}")
-
-        return '+'.join(sels)
-    
-    def fmt_qin(self, pMlog: LOGAB, numofbnk: int, numofbmp: int, bmpposwu: int, allupt: bool, idwu: int) -> str:
-        sels = []
-
-        bettype = pMlog.data.bt.rac.tran.bet.d.hdr.bettypebu
-
-        if not allupt:
-            if numofbnk == 0:
-                sels.append(self.fmt_sln(pMlog, bmpposwu, False, 0))
+            self.m_iLUnitBet     = pMlog.data.bt.can.data.lot.tran.bet.d.hdr.betinvcomb.flexi.baseinv
+            self.m_iLTtlCost     = pMlog.data.bt.can.data.lot.tran.bet.d.hdr.costlu
+            self.m_iLMultiDraw   = pMlog.data.bt.can.data.lot.multidraw
+            
+            # Adjust draw year
+            if self.m_iLDrawYr < 50:
+                self.m_iLDrawYr += 2000
             else:
-                for iwu in range(numofbmp):
-                    sels.append(self.fmt_sln(pMlog, iwu + bmpposwu, False, 0))
-                    if iwu < numofbmp - 1:
-                        sep = '#' if bettype == BETTYP_IWN else '>'
-                        sels.append(sep)
-        else:
-            if numofbnk == 0:
-                sels.append(self.fmt_sln(pMlog, bmpposwu, True, idwu))
+                self.m_iLDrawYr += 1900
+
+            # Multi-entry flag
+            self.m_cMultiEntriesFlag = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.n.multi1
+
+            # Determine entries and draw counts
+            sel_union = pMlog.data.bt.can.data.lot.tran.bet.d.var.n.sel
+            if self.m_cMultiEntriesFlag == 0:
+                lotvar = sel_union.get_lotvar(offset=25)
             else:
-                for iwu in range(numofbmp):
-                    sels.append(self.fmt_sln(pMlog, iwu + bmpposwu, True, idwu))
-                    if iwu < numofbmp - 1:
-                        sels.append('>')
+                count = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.n.sel.multi.entbu
+                offset = 1 + min(count, 4) * 6
+                lotvar = sel_union.get_lotvar(offset=offset)
 
-        return ''.join(sels)
-    
-    def fmt_ext_aup(self, pMlog, numofbmp: int, idwu: int) -> str:
-        sels = []
-        sel = pMlog.data.bt.rac.tran.bet.d.var.a.sel[idwu]
-        numofbnkbmp = 0
+            if self.m_iLMultiDraw == 1:
+                self.m_iNoOfDrawSelected = lotvar.md.drselbu
+                self.m_iNoOfDrawRemain   = lotvar.md.drrembu
+            else:
+                self.m_iNoOfDrawSelected = 1
+                self.m_iNoOfDrawRemain   = 1
+        else:
+            self.m_iLIndex = 0
+            self.m_iLErrSel = 0
+            self.m_iLOffset = 0
+            self.m_cLSrcSell = 0
+            self.m_iLDrawYr = 0
+            self.m_iLDrawNo = 0
+            self.m_iLDrawType = 0
+            self.m_iLUnitBet = 0
+            self.m_iLTtlCost = 0
+            self.m_iLMultiDraw = 0
+            self.m_iNoOfDrawSelected = 0
+            self.m_iNoOfDrawRemain = 0
 
-        # Helper to append fmtSln output
-        def append_sln(iwu):
-            return self.fmt_sln(pMlog, iwu, True, idwu)
+        outputStr += (
+            f"{self.m_iLIndex}~|~"
+            f"{self.m_iLErrSel}~|~"
+            f"{self.m_iLOffset}~|~"
+            f"{self.m_cLSrcSell}~|~"
+            f"{self.m_iLDrawYr}~|~"
+            f"{self.m_iLDrawNo}~|~"
+            f"{self.m_iLDrawType}~|~"
+            f"{self.m_iLUnitBet}~|~"
+            f"{self.m_iLTtlCost}~|~"
+        )
 
-        # Case: Single/single banker TCE/QTT/FCT
-        if sel.ind.bnk1 == 0 and sel.ind.fld1 == 0 and sel.ind.mbk1 == 0 and sel.ind.mul1 == 0:
-            for iwu in range(numofbmp):
-                sels.append(append_sln(iwu))
-            return ''.join(sels).rstrip('+')
+        # Cancel Racing
+        self.m_iRMeetIndex = 0
+        self.m_cRErrRaceNo = 0
+        self.m_cRErrSel    = 0
+        self.m_iROffset    = 0
+        self.m_cRSrcSell   = 0
+        self.m_cRLoc       = 0
+        self.m_cRDay       = 0
+        self.m_cRType      = 0
+        self.m_iRUnitBet   = 0
+        self.m_iRTtlCost   = 0
 
-        # Case: Multi-banker
-        elif sel.ind.mbk1 & 0x01:
-            for iwu in range(numofbmp):
-                sels.append(append_sln(iwu))
-                sels[-1] = sels[-1][:-1] + '>'  # Replace '+' with '>'
-            return ''.join(sels).rstrip('>')
+        if self.m_iCanCode in (ACU_CODE_RAC, ACU_CODE_RAC2):
+            
+            # rac = pMlog.data.bt.can.data.rac
+            if self.m_iErrorCode == 0:
+                self.m_iROffset = pMlog.data.bt.can.data.rac.betinfo.raceinfo.offsetlu
+            else:
+                self.m_iRMeetIndex = pMlog.data.bt.can.data.rac.indexwu
+                err = pMlog.data.bt.can.data.rac.betinfo.errorinfo
+                self.m_cRErrRaceNo = err.racebu
+                self.m_cRErrSel    = err.selbu
 
-        # Case: Multi-bet with no banker
-        elif sel.ind.mul1 & 0x01 and not (sel.ind.bnk1 & 0x01):
-            for iwu in range(numofbmp):
-                sels.append(append_sln(iwu))
-            return ''.join(sels).rstrip('+')
+            self.m_cRSrcSell = pMlog.data.bt.can.data.rac.tran.bet.srcbu
 
-        # Case: Single or multiple banker
-        if sel.ind.bnk1 & 0x01:
-            for iwu in range(numofbmp):
-                if sel.sellu[iwu] == 0:
-                    break
-                numofbnkbmp += 1
+            # bet = pMlog.data.bt.can.data.rac.tran.bet
+            # hdr = pMlog.data.bt.can.data.rac.tran.bet.d.hdr
+            bet_type = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.bettypebu
 
-            for iwu in range(numofbmp):
-                sels.append(append_sln(iwu))
-                if iwu == numofbnkbmp - 2:
-                    sels[-1] = sels[-1][:-1] + '>'  # Replace '+' with '>'
+            # Default meeting date
+            self.m_sRMeetDate = "01-Jan-1900"
+            md = ""
+            if bet_type == BETTYP_AUP:
+                md = str(pMlog.data.bt.can.data.rac.tran.bet.d.var.a.md)
+                self.m_cRLoc = pMlog.data.bt.can.data.rac.tran.bet.d.var.a.loc
+                self.m_cRDay = pMlog.data.bt.can.data.rac.tran.bet.d.var.a.day
+            else:
+                md = str(pMlog.data.bt.can.data.rac.tran.bet.d.var.es.md)
+                self.m_cRLoc = pMlog.data.bt.can.data.rac.tran.bet.d.var.es.loc
+                self.m_cRDay = pMlog.data.bt.can.data.rac.tran.bet.d.var.es.day
 
-            return ''.join(sels).rstrip('>')
+            if len(md) == 8:
+                yy, mm, dd = md[:4], md[4:6], md[6:8]
+                self.m_sRMeetDate = f"{yy}-{mm}-{dd} 00:00:00"
 
-        return ''.join(sels)
-    
-    def fmt_nrm(self, pMlog: LOGAB) -> str:
-        sels = []
-        race_number = pMlog.data.bt.rac.tran.bet.d.var.es.racebu
-        sels.append(f"{race_number}*")
+            self.m_cRType    = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.bettypebu
+            self.m_iRUnitBet = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.betinvcomb.flexi.baseinv
+            self.m_iRTtlCost = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.costlu
 
-        bettype = pMlog.data.bt.rac.tran.bet.d.hdr.bettypebu
-        bnkbu = pMlog.data.bt.rac.tran.bet.d.var.es.betexbnk.bnkbu
+        outputStr += (
+            f"{self.m_iRMeetIndex}~|~"
+            f"{self.m_cRErrRaceNo}~|~"
+            f"{self.m_cRErrSel}~|~"
+            f"{self.m_iROffset}~|~"
+            f"{self.m_cRSrcSell}~|~"
+            f"{self.m_sRMeetDate}~|~"
+            f"{self.m_cRLoc}~|~"
+            f"{self.m_cRDay}~|~"
+            f"{self.m_cRType}~|~"
+            f"{self.m_iRUnitBet}~|~"
+            f"{self.m_iRTtlCost}~|~"
+        )
 
-        if bettype in [BETTYP_WINPLA, BETTYP_WIN, BETTYP_PLA, BETTYP_BWA, BETTYP_CWA, BETTYP_CWB, BETTYP_CWC]:
-            sels.append(self.fmt_sln(pMlog, 0, False, 0))
+        # Cancel Withdrawal
+        if self.m_iCanCode == ACU_CODE_WTW:
+            # wtw = pMlog.data.bt.can.data.wtw.tran
+            self.m_iWAmount    = pMlog.data.bt.can.data.wtw.amountd
+            self.m_iWSvcCharge = pMlog.data.bt.can.data.wtw.chargedu
+            self.m_iWType      = pMlog.data.bt.can.data.wtw.typebu
+            self.m_cWActBy     = pMlog.data.bt.can.data.wtw.tran
+            self.m_cWSrcType   = pMlog.data.bt.can.data.wtw.tran
+            self.m_cWCanFlag   = pMlog.data.bt.can.data.wtw.tran
+        else:
+            self.m_iWAmount = 0
+            self.m_iWSvcCharge = 0
+            self.m_iWType = 0
+            self.m_cWActBy = 0
+            self.m_cWSrcType = 0
+            self.m_cWCanFlag = 0
 
-        elif bettype in [BETTYP_QIN, BETTYP_QPL, BETTYP_TRIO, BETTYP_QINQPL, BETTYP_FF]:
-            sels.append(self.fmt_qin(pMlog, bnkbu[0], 2, 0, False, 0))
+        outputStr += (
+            f"{self.m_iWAmount}~|~"
+            f"{self.m_iWSvcCharge}~|~"
+            f"{self.m_iWType}~|~"
+            f"{self.m_cWActBy}~|~"
+            f"{self.m_cWSrcType}~|~"
+            f"{self.m_cWCanFlag}~|~"
+        )
 
-        elif bettype == BETTYP_IWN:
-            sels.append(self.fmt_qin(pMlog, 1, 2, 0, False, 0))
+        # Cancel SB
+        if self.m_iCanCode in (ACU_CODE_SB, ACU_CODE_SB2):
+            # sb = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr
+            self.m_iSSrcSell = pMlog.data.bt.can.data.sb.bet.tran.srcbu
+            self.m_iSUnitBet = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.betinvcomb.flexi.baseinv
+            self.m_iSTtlCost = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.costlu
 
-        elif bettype == BETTYP_TCE:
-            sels.append(self.fmt_ext(pMlog, 3, bnkbu[0]))
+            s_time = time.localtime(pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.sellTime)
+            self.m_sSSelltime = f"{s_time.tm_mday}-" + \
+                                 f"{MONTHS[s_time.tm_mon-1]}-{1900 + s_time.tm_year}" if s_time else ""
+            self.m_cSBetType = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.bettypebu
+        else:
+            self.m_iSSrcSell = 0
+            self.m_iSUnitBet = 0
+            self.m_iSTtlCost = 0
+            self.m_cSBetType = 0
+            self.m_sSSelltime = ""
+            
+        outputStr += (
+            f"{self.m_iSSrcSell}~|~"
+            f"{self.m_iSUnitBet}~|~"
+            f"{self.m_iSTtlCost}~|~"
+            f"{self.m_sSSelltime}~|~"
+            f"{self.m_cSBetType}~|~"
+        )
 
-        elif bettype == BETTYP_FCT:
-            sels.append(self.fmt_ext(pMlog, 2, bnkbu[0]))
+        # Cancel Deposit
+        if self.m_iCanCode in (ACU_CODE_DEP, ACU_CODE_DEP_TSN2):
+            # dep = pMlog.data.bt.can.data.dep.tran
+            h_time = time.localtime(pMlog.data.bt.can.data.dep.tran.holdtime)
+            self.m_sDHoldTime = f"{h_time.tm_mday}-{MONTHS[h_time.tm_mon-1]}-{1900 + h_time.tm_year}"
+            self.m_iDAmount       = pMlog.data.bt.can.data.dep.tran.amountdu
+            self.m_iDSvcCharge    = pMlog.data.bt.can.data.dep.tran.chargedu
+            self.m_cDType         = pMlog.data.bt.can.data.dep.tran.typebu
+            self.m_iDWithHoldFlag = pMlog.data.bt.can.data.dep.tran.hold1
+            self.m_iDCancelFlag   = pMlog.data.bt.can.data.dep.tran.cancel1
+            self.m_iDRevFlag      = pMlog.data.bt.can.data.dep.tran.reversed1
+            self.m_cDSrcDep       = pMlog.data.bt.can.data.dep.tran.srcbu
+        else:
+            self.m_sDHoldTime = ""
+            self.m_iDAmount = 0
+            self.m_iDSvcCharge = 0
+            self.m_cDType = 0
+            self.m_iDWithHoldFlag = 0
+            self.m_iDCancelFlag = 0
+            self.m_iDRevFlag = 0
+            self.m_cDSrcDep = 0
 
-        elif bettype == BETTYP_QTT:
-            sels.append(self.fmt_ext(pMlog, 4, bnkbu[0]))
-
-        elif bettype in [BETTYP_DBL, BETTYP_TBL, BETTYP_6UP]:
-            legwu = {BETTYP_DBL: 2, BETTYP_TBL: 3, BETTYP_6UP: 6}[bettype]
-            for i in range(legwu):
-                sels.append(self.fmt_sln(pMlog, i, False, 0))
-                if i < legwu - 1:
-                    sels.append('/')
-
-        elif bettype == BETTYP_TTR:
-            legwu = 3
-            for i in range(legwu):
-                sels.append(self.fmt_qin(pMlog, bnkbu[i], 2, i * 2, False, 0))
-                if i < legwu - 1:
-                    sels.append('/')
-            if pMlog.data.bt.rac.tran.bet.d.var.es.ind.twoentry:
-                sels.append(f"|{race_number}*")
-                for i in range(legwu):
-                    sels.append(self.fmt_qin2(pMlog, 0, 2, i * 2, False, 0))
-                    if i < legwu - 1:
-                        sels.append('/')
-
-        elif bettype in [BETTYP_DQN, BETTYP_DTR]:
-            legwu = 2
-            for i in range(legwu):
-                sels.append(self.fmt_qin(pMlog, bnkbu[i], 2, i * 2, False, 0))
-                if i < legwu - 1:
-                    sels.append('/')
-
-        # Append indicators
-        sels.append(self.fmt_ind(pMlog, False, 0))
-
-        return ''.join(sels)
+        outputStr += (
+            f"{self.m_sDHoldTime}~|~"
+            f"{self.m_iDAmount}~|~"
+            f"{self.m_iDSvcCharge}~|~"
+            f"{self.m_cDType}~|~"
+            f"{self.m_iDWithHoldFlag}~|~"
+            f"{self.m_iDCancelFlag}~|~"
+            f"{self.m_iDRevFlag}~|~"
+            f"{self.m_cDSrcDep}~|~"
+            f"{self.m_iLMultiDraw}~|~"
+            f"{self.m_iNoOfDrawSelected}~|~"
+            f"{self.m_iNoOfDrawRemain}~|~"
+            f"{self.m_cCanPrevDay}~|~"
+            f"{self.m_sTranDate}"
+        )
+        return outputStr
