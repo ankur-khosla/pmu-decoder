@@ -2,37 +2,6 @@ from ab_translator.constants import *
 from ab_translator.data_structures import LOGAB
 
 class DelSel:
-    # @staticmethod
-    # def get_bet_type( bet_type: int) -> str:
-    #     return {
-    #         BETTYP_WINPLA: "W-P",
-    #         BETTYP_WIN:    "WIN",
-    #         BETTYP_PLA:    "PLA",
-    #         BETTYP_QIN:    "QIN",
-    #         BETTYP_QPL:    "QPL",
-    #         BETTYP_DBL:    "DBL",
-    #         BETTYP_TCE:    "TCE",
-    #         BETTYP_FCT:    "FCT",
-    #         BETTYP_QTT:    "QTT",
-    #         BETTYP_DQN:    "D-Q",
-    #         BETTYP_TBL:    "TBL",
-    #         BETTYP_TTR:    "T-T",
-    #         BETTYP_6UP:    "6UP",
-    #         BETTYP_DTR:    "D-T",
-    #         BETTYP_TRIO:   "TRI",
-    #         BETTYP_QINQPL: "QQP",
-    #         BETTYP_CV:     "CV",
-    #         BETTYP_MK6:    "MK6",
-    #         BETTYP_PWB:    "PWB",
-    #         BETTYP_AWP:    "ALUP",
-    #         BETTYP_FF:     "F-F",
-    #         BETTYP_BWA:    "BWA",
-    #         BETTYP_CWA:    "CWA",
-    #         BETTYP_CWB:    "CWB",
-    #         BETTYP_CWC:    "CWC",
-    #         BETTYP_IWN:    "IWN",
-    #        }.get(bet_type, "XXXX")
-
     @staticmethod
     def get_sel(pMlog: LOGAB, m_cType: int) -> str:
         # char legs[5], sels[1024]
@@ -40,15 +9,10 @@ class DelSel:
         sels = ""
         indexbu = 0
 
-        print(m_cType)
-
         if m_cType == BETTYP_AWP:
             indexbu = pMlog.data.bt.rac.tran.bet.d.var.a.fmlbu
-            print(indexbu)
             legs = DelSel.get_form(indexbu)  # assumed to return string
-            print("legs" + legs)
             sels = DelSel.fmt_aup(pMlog)     # assumed to return string
-            print("sels" + sels)
             return sels.strip()
 
         elif m_cType in (BETTYP_MK6, BETTYP_PWB):
@@ -102,7 +66,7 @@ class DelSel:
                 else:
                     sels += f"{race_no}*"
 
-                sels = DelSel.fmt_sln_replace_str(pMlog, 0, True, a, sels)
+                sels = DelSel.fmt_sln(pMlog, 0, True, a, sels)
                 sels += DelSel.fmt_ind(pMlog, True, a)
                 sels += "/"
 
@@ -134,10 +98,10 @@ class DelSel:
 
             # else: ignore other bettypes
 
-        return sels.rstrip("/")  # remove trailing slash
+        return sels[:-1]  # remove trailing slash
     
     @staticmethod
-    def fmt_sln_replace_str(pMlog: LOGAB, bmppos: int, allupt: bool, idwu: int, str_input: str) -> str:
+    def fmt_sln(pMlog: LOGAB, bmppos: int, allupt: bool, idwu: int, str_input: str) -> str:
         sels = str_input
         fldwu = RDS_MAXFLD
         iwu = 0
@@ -163,35 +127,7 @@ class DelSel:
             and ((not allupt and hdr != BETTYP_FCT)
                 or (allupt and leg != BETTYP_FCT))):
             sels = sels[:-1]
-
         return sels
-    # @staticmethod
-    # def fmt_sln(pMlog: LOGAB, bmppos: int, allupt: bool, idwu: int) -> str:
-    #     sels = ""
-    #     fldwu = RDS_MAXFLD  # maximum number of selection fields
-
-    #     if not allupt:  # standard/exotic bet
-    #         bitmap = pMlog.data.bt.rac.tran.bet.d.var.es.sellu[bmppos]
-    #         for jwu in range(1, fldwu + 1):
-    #             if bitmap & (1 << jwu):
-    #                 sels += f"{jwu:02d}+"
-    #     else:  # allup bet
-    #         bitmap = pMlog.data.bt.rac.tran.bet.d.var.a.sel[idwu].sellu[bmppos]
-    #         for jwu in range(1, fldwu + 1):
-    #             if bitmap & (1 << jwu):
-    #                 sels += f"{jwu}+"
-
-    #     # cancel last '+' unless it's TCE, QTT, or FCT under specific conditions
-    #     bettype_hdr = pMlog.data.bt.rac.tran.bet.d.hdr.bettypebu
-    #     bettype_leg = pMlog.data.bt.rac.tran.bet.d.var.a.sel[idwu].bettypebu
-
-    #     if bettype_hdr not in (BETTYP_TCE, BETTYP_QTT) and (
-    #         (not allupt and bettype_hdr != BETTYP_FCT) or
-    #         (allupt and bettype_leg != BETTYP_FCT)
-    #     ):
-    #         sels = sels.rstrip('+')
-
-    #     return sels
     
     @staticmethod
     def fmt_ind(pMlog: LOGAB, allupt: bool, idwu: int) -> str:
@@ -219,10 +155,10 @@ class DelSel:
         result = ""
 
         if numofbnk == 0:
-            result += DelSel.fmt_sln2(pMlog, bmpposwu, False, 0)
+            result = DelSel.fmt_sln2(pMlog, bmpposwu, False, 0, result)
         else:
             for iwu in range(numofbmp):
-                part = DelSel.fmt_sln2(pMlog, iwu + bmpposwu, False, 0)
+                part = DelSel.fmt_sln2(pMlog, iwu + bmpposwu, False, 0, "")
                 if iwu > 0:
                     result += ">"
                 result += part
@@ -230,16 +166,17 @@ class DelSel:
         return result
     
     @staticmethod
-    def fmt_sln2(pMlog: LOGAB, bmppos: int, allupt: bool, idwu: int) -> str:
+    def fmt_sln2(pMlog: LOGAB, bmppos: int, allupt: bool, idwu: int, input_str: str) -> str:
         max_field = RDS_MAXFLD
-        sels = ""
+        sels = input_str
         bitmap = pMlog.data.bt.rac.tran.bet.d.var.es.betexbnk.sellu[bmppos]
 
         for jwu in range(1, max_field + 1):
             if (bitmap & (1 << jwu)) != 0:
-                sels.append(f"{jwu:02d}")
+                sels += f"{jwu:02d}"
+                sels =+ '+'
 
-        return '+'.join(sels)
+        return sels[:-1]
     
     @staticmethod
     def fmt_ext(pMlog, numofbmp: int, numofbnk: int) -> str:
@@ -250,20 +187,20 @@ class DelSel:
         # single/single banker TCE/QTT/FCT bet
         if ind.bnk1 == 0 and ind.fld1 == 0 and ind.mbk1 == 0 and ind.mul1 == 0:
             for i in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, i, False, 0, sels)
+                sels = DelSel.fmt_sln(pMlog, i, False, 0, sels)
             return sels.rstrip('+')
 
         # multi-banker bet
         if (ind.mbk1 & 0x01) == 1:
             for i in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, i, False, 0, sels).rstrip('+')
+                sels = DelSel.fmt_sln(pMlog, i, False, 0, sels).rstrip('+')
                 sels += '>'
             return sels.rstrip('>')
 
         # multiple bet (non-banker)
         if (ind.mul1 & 0x01) == 1 and (ind.bnk1 & 0x01) == 0:
             for i in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, i, False, 0, sels)
+                sels = DelSel.fmt_sln(pMlog, i, False, 0, sels)
             return sels.rstrip('+')
 
         # single/multiple banker
@@ -275,7 +212,7 @@ class DelSel:
                 numofbnkbmp += 1
 
             for i in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, i, False, 0, sels).rstrip('+')
+                sels = DelSel.fmt_sln(pMlog, i, False, 0, sels).rstrip('+')
                 if i == numofbnkbmp - 2:
                     sels += '>'
             return sels.rstrip('>')
@@ -290,19 +227,19 @@ class DelSel:
 
         if not allupt:
             if numofbnk == 0:
-                sels = DelSel.fmt_sln_replace_str(pMlog, bmpposwu, False, 0, sels)
+                sels = DelSel.fmt_sln(pMlog, bmpposwu, False, 0, sels)
             else:
                 for iwu in range(numofbmp):
-                    sels = DelSel.fmt_sln_replace_str(pMlog, iwu + bmpposwu, False, 0, sels)
+                    sels = DelSel.fmt_sln(pMlog, iwu + bmpposwu, False, 0, sels)
                     if iwu < numofbmp - 1:
                         sep = '#' if bettype == BETTYP_IWN else '>'
                         sels += sep
         else:
             if numofbnk == 0:
-                sels = DelSel.fmt_sln_replace_str(pMlog, bmpposwu, True, idwu, sels)
+                sels = DelSel.fmt_sln(pMlog, bmpposwu, True, idwu, sels)
             else:
                 for iwu in range(numofbmp):
-                    sels = DelSel.fmt_sln_replace_str(pMlog, iwu + bmpposwu, True, idwu, sels)
+                    sels = DelSel.fmt_sln(pMlog, iwu + bmpposwu, True, idwu, sels)
                     if iwu < numofbmp - 1:
                         sels += '>'
 
@@ -317,20 +254,20 @@ class DelSel:
         # Case: Single/single banker TCE/QTT/FCT
         if sel.ind.bnk1 == 0 and sel.ind.fld1 == 0 and sel.ind.mbk1 == 0 and sel.ind.mul1 == 0:
             for iwu in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, iwu, True, idwu, sels)
+                sels = DelSel.fmt_sln(pMlog, iwu, True, idwu, sels)
             return sels[:-1]
 
         # Case: Multi-banker
         elif sel.ind.mbk1 & 0x01 == 1:
             for iwu in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, iwu, True, idwu, sels)
+                sels = DelSel.fmt_sln(pMlog, iwu, True, idwu, sels)
                 sels[-1] = sels[-1][:-1] + '>'  # Replace '+' with '>'
             return sels[:-1]
 
         # Case: Multi-bet with no banker
         elif (sel.ind.mul1 & 0x01 == 1) and (sel.ind.bnk1 & 0x01 == 0):
             for iwu in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, iwu, True, idwu, sels)
+                sels = DelSel.fmt_sln(pMlog, iwu, True, idwu, sels)
             return sels[:-1]
 
         # Case: Single or multiple banker
@@ -341,12 +278,10 @@ class DelSel:
                 numofbnkbmp += 1
 
             for iwu in range(numofbmp):
-                sels = DelSel.fmt_sln_replace_str(pMlog, iwu, True, idwu, sels)
+                sels = DelSel.fmt_sln(pMlog, iwu, True, idwu, sels)
                 if iwu == numofbnkbmp - 2:
                     sels[-1] = sels[-1][:-1] + '>'  # Replace '+' with '>'
-
             return sels[:-1]
-
         return sels
     
     @staticmethod
@@ -359,7 +294,7 @@ class DelSel:
         bnkbu = pMlog.data.bt.rac.tran.bet.d.var.es.betexbnk.bnkbu
 
         if bettype in [BETTYP_WINPLA, BETTYP_WIN, BETTYP_PLA, BETTYP_BWA, BETTYP_CWA, BETTYP_CWB, BETTYP_CWC]:
-            sels = DelSel.fmt_sln_replace_str(pMlog, 0, False, 0, sels)
+            sels = DelSel.fmt_sln(pMlog, 0, False, 0, sels)
 
         elif bettype in [BETTYP_QIN, BETTYP_QPL, BETTYP_TRIO, BETTYP_QINQPL, BETTYP_FF]:
             sels += DelSel.fmt_qin(pMlog, bnkbu[0], 2, 0, False, 0)
@@ -379,7 +314,7 @@ class DelSel:
         elif bettype in [BETTYP_DBL, BETTYP_TBL, BETTYP_6UP]:
             legwu = {BETTYP_DBL: 2, BETTYP_TBL: 3, BETTYP_6UP: 6}[bettype]
             for i in range(legwu):
-                sels = DelSel.fmt_sln_replace_str(pMlog, i, False, 0, sels)
+                sels = DelSel.fmt_sln(pMlog, i, False, 0, sels)
                 if i < legwu - 1:
                     sels += '/'
 
