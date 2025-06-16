@@ -2,7 +2,7 @@ import time
 import ctypes
 import math
 from ab_translator.constants import *
-from ab_translator.data_structures import LOGAB
+from ab_translator.data_structures import LOGAB, BETLOTVAR, BETLOTN
 from ab_translator.del_sel import DelSel
 from ab_translator.msg import Msg
 from collections import defaultdict
@@ -629,20 +629,77 @@ class ABTranslator:
             self.m_cMultiEntriesFlag = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.n.multi1
 
             # Determine entries and draw counts
-            sel_union = pMlog.data.bt.can.data.lot.tran.bet.d.var.n.sel
-            if self.m_cMultiEntriesFlag == 0:
-                lotvar = sel_union.get_lotvar(offset=25)
-            else:
-                count = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.n.sel.multi.entbu
-                offset = 1 + min(count, 4) * 6
-                lotvar = sel_union.get_lotvar(offset=offset)
+            betlton = BETLOTN.from_buffer_copy(pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.n.sel)
 
-            if self.m_iLMultiDraw == 1:
-                self.m_iNoOfDrawSelected = lotvar.md.drselbu
-                self.m_iNoOfDrawRemain   = lotvar.md.drrembu
-            else:
-                self.m_iNoOfDrawSelected = 1
-                self.m_iNoOfDrawRemain   = 1
+            lotvar = betlton.single
+            self.m_iNoOfDrawSelected = 1
+            self.m_iNoOfDrawRemain   = 1
+            
+            # TODO: fix this
+            # 
+            # Only Consider Single Draw for now
+            # 
+            # if self.m_cMultiEntriesFlag == 0:
+            #     lotvar = betlton.single
+            # else:
+            #     count = pMlog.data.bt.can.data.lot.tran.bet.d.var.lot.n.sel.multi.entbu
+            #     offset = 1 + min(count, 4) * 6
+            #     lotvar = sel_union.get_lotvar(offset=offset)
+
+            # if self.m_iLMultiDraw == 1:
+            #     self.m_iNoOfDrawSelected = lotvar.md.drselbu
+            #     self.m_iNoOfDrawRemain   = lotvar.md.drrembu
+            # else:
+            #     self.m_iNoOfDrawSelected = 1
+            #     self.m_iNoOfDrawRemain   = 1
+            """
+            struct BETLOTVAR *pLOTVAR;
+
+            union BETLTON *pLTON;
+            pLTON = (union BETLTON *)&pMlog->data.bt.can.data.lot.tran.bet.d.var.lot.n.sel;
+
+            if (m_cMultiEntriesFlag == 0)
+            {
+
+            //pLOTVAR = (struct BETLOTVAR *) ((char *) pLOT+2+25);
+                //pLOTVAR = (struct BETLOTVAR *) ((char *) pMlog+125+2+25);
+                pLOTVAR = (struct BETLOTVAR *) ((char *) pLTON + 25);
+                
+                if ( m_iLMultiDraw == 1 )
+                {
+                    m_iNoOfDrawSelected = pLOTVAR->md.drselbu;
+                    m_iNoOfDrawRemain = pLOTVAR->md.drrembu;
+                }
+                else
+                {
+                    m_iNoOfDrawSelected = 1;
+                    m_iNoOfDrawRemain = 1;
+                }
+
+            }
+            else
+            {
+
+                m_iNoOfEntries			= pMlog->data.bt.can.data.lot.tran.bet.d.var.lot.n.sel.multi.entbu;	
+
+                
+                if (m_iNoOfEntries <=4)
+                    pLOTVAR = (struct BETLOTVAR *) ((char *) pLTON +1+(4 * 6));
+                else 
+                    pLOTVAR = (struct BETLOTVAR *) ((char *) pLTON +1+(m_iNoOfEntries * 6));
+
+                if ( m_iLMultiDraw == 1 )
+                {
+                    m_iNoOfDrawSelected = pLOTVAR->md.drselbu;
+                    m_iNoOfDrawRemain = pLOTVAR->md.drrembu;
+                }
+                else
+                {
+                    m_iNoOfDrawSelected = 1;
+                    m_iNoOfDrawRemain = 1;
+                }
+            }
+            """
         else:
             self.m_iLIndex = 0
             self.m_iLErrSel = 0
@@ -680,7 +737,7 @@ class ABTranslator:
         self.m_cRType      = 0
         self.m_iRUnitBet   = 0
         self.m_iRTtlCost   = 0
-        self.m_sRMeetDate = "01-Jan-1900"
+        self.m_sRMeetDate = ""
 
         if self.m_iCanCode in (ACU_CODE_RAC, ACU_CODE_RAC2):
             
@@ -735,12 +792,12 @@ class ABTranslator:
         # Cancel Withdrawal
         if self.m_iCanCode == ACU_CODE_WTW:
             # wtw = pMlog.data.bt.can.data.wtw.tran
-            self.m_iWAmount    = pMlog.data.bt.can.data.wtw.amountd
-            self.m_iWSvcCharge = pMlog.data.bt.can.data.wtw.chargedu
-            self.m_iWType      = pMlog.data.bt.can.data.wtw.typebu
-            self.m_cWActBy     = pMlog.data.bt.can.data.wtw.tran
-            self.m_cWSrcType   = pMlog.data.bt.can.data.wtw.tran
-            self.m_cWCanFlag   = pMlog.data.bt.can.data.wtw.tran
+            self.m_iWAmount    = pMlog.data.bt.can.data.wtw.tran.amountd
+            self.m_iWSvcCharge = pMlog.data.bt.can.data.wtw.tran.chargedu
+            self.m_iWType      = pMlog.data.bt.can.data.wtw.tran.typebu
+            self.m_cWActBy     = pMlog.data.bt.can.data.wtw.tran.actBybu
+            self.m_cWSrcType   = pMlog.data.bt.can.data.wtw.tran.srcbu
+            self.m_cWCanFlag   = pMlog.data.bt.can.data.wtw.tran.cancel1
         else:
             self.m_iWAmount = 0
             self.m_iWSvcCharge = 0

@@ -502,22 +502,266 @@ class BETEXOSTD(LittleEndianStructure):
         ("betexbnk", BETEXBNK),
     ]
 
+BET_LOT_MAXSEL = 6
+BET_LOT_MAXENTRY = 10
+class BETLOTM(LittleEndianStructure):
+    """
+    struct  BETLOTM         // multiple entry
+    {
+    unsigned char         entbu;          // # of entries
+    unsigned char         selbu[BET_LOT_MAXENTRY][BET_LOT_MAXSEL];    
+                                            // binary selection
+    };
+    """    
+    _pack_ = 1
+    _fields_ = [
+        ("entbu", c_ubyte),  
+            # # of entries
+        ("selbu", (c_ubyte * BET_LOT_MAXSEL) * BET_LOT_MAXENTRY),
+            # binary selection [BET_LOT_MAXENTRY][BET_LOT_MAXSEL]
+    ]
+
+class BETLOTMD(LittleEndianStructure):
+    """
+    struct  BETLOTMD        // multi-draw lottery extra info
+    {                       // in normal bet file only
+    unsigned LONGLONG     odivdu;         // online dividend in cents
+    unsigned char         drrfdbu;        // number of draw refunded 
+    unsigned char         drselbu;        // # of draws selected
+    unsigned char         drrembu;        // # of draws remaining
+    unsigned char         drdivbu;        // # of draws online divcal'd
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("odivdu", c_longlong),  # online dividend in cents
+        ("drrfdbu", c_ubyte),    # number of draws refunded
+        ("drselbu", c_ubyte),    # # of draws selected
+        ("drrembu", c_ubyte),    # # of draws remaining
+        ("drdivbu", c_ubyte),    # # of draws online divcal'd
+    ]
+
+BET_LOT_MAXAONS = 3
+class BETAON(LittleEndianStructure):
+    """
+    struct BETAON
+    {
+    unsigned char         aselbu[BET_LOT_MAXAONS];    // add-on selections
+    unsigned short        abaswu;         // add-on investment in $
+    };     
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("aselbu", c_ubyte * BET_LOT_MAXAONS),  # add-on selections
+        ("abaswu", c_ushort),                   # add-on investment in $
+    ]
+
+
+BET_LOT_MAXSMAP = 7  
+class BETLOTS(LittleEndianStructure):
+    """
+    struct  BETLOTS         // single lottery info
+    {
+    unsigned char         nbnkbu;         // # of bankers
+    unsigned char         nothbu;         // # of other selections [0=non-banker]
+    unsigned char         bnkmbu[BET_LOT_MAXSMAP];    // banker bitmap
+                                                        // or odd-even selection
+    unsigned char         othmbu[BET_LOT_MAXSMAP];    // other selections bitmap
+    unsigned char         npwbbu;         // # of powerball selections
+    unsigned char         pbasbu;         // powerball base
+    unsigned char         pcmbu[BET_LOT_MAXSMAP];       
+                                            // powerball selections bitmap
+                                            // or concurrent game bitmap
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("nbnkbu", c_ubyte),                               # # of bankers
+        ("nothbu", c_ubyte),                               # # of other selections
+        ("bnkmbu", c_ubyte * BET_LOT_MAXSMAP),             # banker bitmap / odd-even selection
+        ("othmbu", c_ubyte * BET_LOT_MAXSMAP),             # other selections bitmap
+        ("npwbbu", c_ubyte),                               # # of powerball selections
+        ("pbasbu", c_ubyte),                               # powerball base
+        ("pcmbu", c_ubyte * BET_LOT_MAXSMAP),              # powerball bitmap / concurrent game bitmap
+    ]
+
+class BETLOTN(LittleEndianUnion):
+    """
+    union   BETLOTN         // lottery info minus add-on
+    {
+    struct BETLOTM        multi;
+    struct BETLOTS        single;
+    };
+    """    
+    _pack_ = 1
+    _fields_ = [
+        ("multi",  BETLOTM),   # multi-draw lottery info
+        ("single", BETLOTS),   # single-draw lottery info
+    ]
+
+class BETLOTVAR(LittleEndianStructure):
+    """
+    struct BETLOTVAR		//  new change in Q310 , lottery etra information
+    {
+        struct BETAON		aon;			// add on information
+        struct BETLOTMD		md;				// mult-draw infomation
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("aon", BETAON),    # add-on information
+        ("md", BETLOTMD),   # mult-draw information
+    ]
+
+class BETSB_SCT_ID(LittleEndianStructure):
+    """
+    struct BETSB_SCT_ID     // identity information for section bet
+    {
+    unsigned char         setbu;          // section set number
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("setbu", c_ubyte),    # section set number
+    ]
+
+class BETSB_BONUS_SCT(LittleEndianUnion):
+    """
+    union BETSB_BONUS_SCT
+    {
+    unsigned short        bonuspcentwu;   // bonus % * 100 for non-allup
+    struct BETSB_SCT_ID   sctid;          // identity information for section bet
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("bonuspcentwu", c_ushort),   # bonus % * 100 for non-allup
+        ("sctid", BETSB_SCT_ID),      # identity information for section bet
+    ]
+
+
+SB_MAX_BET_BUF = 512
+class BETSB_DET(LittleEndianStructure):
+    """
+    struct BETSB_DET
+    {
+        unsigned int          bonuslu;        // total bonus in cents
+        unsigned int          refundlu;       // refund in cents 
+        union BETSB_BONUS_SCT sctbonus;       // bonus or section bet id
+        unsigned char         numbu;          // # of simple pool
+        unsigned char         fmlentbu;       // all-up formula / # of entry  PN14..
+        unsigned char         vbu[SB_MAX_BET_BUF];  
+                                        // variable part :-
+                                        //  single entry: BETSB_SIMPLE[*]
+                                        //  multiple entry (when bet type is not
+                                        //      all-up bet and fmlentbu > 0): 
+                                        //      [ BETSB_SIMPLE with n entry ][npoolbu]
+                                        //                                      ..PN14
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("bonuslu", c_uint),                # total bonus in cents
+        ("refundlu", c_uint),               # refund in cents
+        ("sctbonus", BETSB_BONUS_SCT),      # bonus or section bet id
+        ("numbu", c_ubyte),                 # # of simple pool
+        ("fmlentbu", c_ubyte),              # all-up formula / # of entry
+        ("vbu", c_ubyte * SB_MAX_BET_BUF),  # variable part:
+                                             #   single entry: BETSB_SIMPLE[*]
+                                             #   multiple entry: [BETSB_SIMPLE entries] [npoolbu]
+    ]
+
+class BETLOTFIX(LittleEndianStructure):
+    """
+    struct  BETLOTFIX       // single draw lottery info
+    {
+    unsigned char         multi1:1;       // multi-entry
+    unsigned char         rand1:1;        // randomly generated
+    unsigned char         field1:1;       // field bet
+    unsigned char         addon1:1;       // add-on selection is available PN19
+    unsigned char         spc1:1;         // special draw                  PN26
+    unsigned char         pub1:1;         // Partial Unit Bet
+    //unsigned char         :2;
+    unsigned char         gamebu;         // game type
+    LONGLONG				poolidd;		// SP3 pool id
+    char					fieldsizeb;		// field size
+    union BETLOTN         sel;            // normal selections
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("multi1", c_ubyte, 1),       # multi-entry
+        ("rand1", c_ubyte, 1),        # randomly generated
+        ("field1", c_ubyte, 1),       # field bet
+        ("addon1", c_ubyte, 1),       # add-on selection is available PN19
+        ("spc1", c_ubyte, 1),         # special draw                  PN26
+        ("pub1", c_ubyte, 1),         # Partial Unit Bet
+        ("_pad", c_ubyte, 2),         # padding
+        ("gamebu", c_ubyte),          # game type
+        ("poolidd", c_longlong),      # SP3 pool id
+        ("fieldsizeb", c_char),       # field size
+        ("sel", BETLOTN),             # normal selections
+    ]
+
+class BETDEP(LittleEndianStructure):
+    """
+    struct  BETDEP          // cv info
+    {
+    unsigned char         methodbu;       
+        #define BETDEP_ISSMTD_AUTO  0       // auto issue
+        #define BETDEP_ISSMTD_KEY   1       // keypad issue
+        #define BETDEP_ISSMTD_EFT   2       // eft issue
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("methodbu", c_ubyte),  # cv info
+    ]
+    # BETDEP_ISSMTD_AUTO = 0   # auto issue
+    # BETDEP_ISSMTD_KEY  = 1   # keypad issue
+    # BETDEP_ISSMTD_EFT  = 2   # eft issue
+
+
+class BETLOT(LittleEndianStructure):
+    """
+    struct  BETLOT          // lottery info  // change in Q310
+    {
+        unsigned short yearwu;
+        unsigned short drawwu;
+        unsigned short typewu;
+        struct BETLOTFIX      n;      // single draw info -- variable size
+        struct BETLOTVAR      var;     // add-on game info and optional multi-draw info
+    };
+    """
+    _pack_ = 1
+    _fields_ = [
+        ("yearwu", c_ushort),        # draw year
+        ("drawwu", c_ushort),        # draw number
+        ("typewu", c_ushort),        # lotteryfBETLTON type
+        ("n", BETLOTFIX),            # single-draw info (variable size)
+        ("var", BETLOTVAR),           # add-on/multi-draw info
+    ]
+
 class BETVAR(LittleEndianUnion):
     """
-    union   BETVAR                          // variable part
+    union BETVAR  // variable bet detail
     {
-        struct BETAUP         a;      // allup
-        struct BETEXOSTD      es;     // exotic/standard
-        struct BETLOT         lot;    // lottery  // ** NOT RELEVANT TO APRace **
-        struct BETDEP         cv;     // cash voucher ** NOT RELEVANT TO APRace **
-        struct BETSB_DET      sb;     // soccer betting ** NOT RELEVANT TO APRace **
+        struct BETAUP    a;   // all-up bet
+        struct BETEXOSTD es;  // exotic/standard bet
+        struct BETLOT    lot; // lottery bet
+        struct BETDEP    cv;  // cash voucher bet
+        struct BETSB_DET sb;  // soccer betting detail
     };
     """
     _pack_ = 1
     _fields_ = [
         ("a",   BETAUP),      
-        ("es",  BETEXOSTD)
+        ("es",  BETEXOSTD),   
+        ("lot", BETLOT),      
+        ("cv",  BETDEP),      
+        ("sb",  BETSB_DET),   
     ]
+
 
 class BETHDR(LittleEndianStructure):
     """
