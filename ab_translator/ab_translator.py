@@ -680,6 +680,7 @@ class ABTranslator:
         self.m_cRType      = 0
         self.m_iRUnitBet   = 0
         self.m_iRTtlCost   = 0
+        self.m_sRMeetDate = "01-Jan-1900"
 
         if self.m_iCanCode in (ACU_CODE_RAC, ACU_CODE_RAC2):
             
@@ -699,14 +700,13 @@ class ABTranslator:
             bet_type = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.bettypebu
 
             # Default meeting date
-            self.m_sRMeetDate = "01-Jan-1900"
             md = ""
             if bet_type == BETTYP_AUP:
-                md = str(pMlog.data.bt.can.data.rac.tran.bet.d.var.a.md)
-                self.m_cRLoc = pMlog.data.bt.can.data.rac.tran.bet.d.var.a.loc
-                self.m_cRDay = pMlog.data.bt.can.data.rac.tran.bet.d.var.a.day
+                md =       str(pMlog.data.bt.can.data.rac.tran.bet.d.var.a.md)
+                self.m_cRLoc = pMlog.data.bt.rac.tran.bet.d.var.a.loc
+                self.m_cRDay = pMlog.data.bt.rac.tran.bet.d.var.a.day
             else:
-                md = str(pMlog.data.bt.can.data.rac.tran.bet.d.var.es.md)
+                md =       str(pMlog.data.bt.can.data.rac.tran.bet.d.var.es.md)
                 self.m_cRLoc = pMlog.data.bt.can.data.rac.tran.bet.d.var.es.loc
                 self.m_cRDay = pMlog.data.bt.can.data.rac.tran.bet.d.var.es.day
 
