@@ -1,13 +1,13 @@
 Metadata-Version: 2.1
-Name: ab-race-translator
+Name: ab-translator
 Version: 1.0.0
 Summary: Python package for translating AB Racing messages from C++ LOGAB format
-Home-page: https://github.com/your-org/ab-race-translator
+Home-page: https://github.com/your-org/ab-translator
 Author: Converted from C++ ABRace
 Author-email: developer@company.com
-Project-URL: Bug Reports, https://github.com/your-org/ab-race-translator/issues
-Project-URL: Source, https://github.com/your-org/ab-race-translator
-Project-URL: Documentation, https://github.com/your-org/ab-race-translator/blob/main/README.md
+Project-URL: Bug Reports, https://github.com/your-org/ab-translator/issues
+Project-URL: Source, https://github.com/your-org/ab-translator
+Project-URL: Documentation, https://github.com/your-org/ab-translator/blob/main/README.md
 Keywords: racing,betting,message-translator,logab,c++,conversion,binary-parser,financial,horse-racing,data-processing
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers

@@ -25,15 +25,15 @@ def read_requirements():
     return []
 
 setup(
-    name="ab-race-translator",
+    name="ab-translator",
     version="1.0.0",
     author="Converted from C++ ABRace",
     author_email="developer@company.com",
     description="Python package for translating AB Racing messages from C++ LOGAB format",
     long_description=read_readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/your-org/ab-race-translator",
-    packages=find_packages(),
+    url="https://github.com/your-org/ab-translator",
+    packages=find_packages(include=['ab_translator', 'ab_translator.*']),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
@@ -68,11 +68,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'ab-race-translate=ab_race_translator.example_usage:main',
+            'ab-translate=ab_translator.example_usage:main',
         ],
     },
     package_data={
-        'ab_race_translator': [
+        'ab_translator': [
             '*.py',
             'py.typed',
         ],
@@ -84,8 +84,8 @@ setup(
         'binary-parser', 'financial', 'horse-racing', 'data-processing'
     ],
     project_urls={
-        'Bug Reports': 'https://github.com/your-org/ab-race-translator/issues',
-        'Source': 'https://github.com/your-org/ab-race-translator',
-        'Documentation': 'https://github.com/your-org/ab-race-translator/blob/main/README.md',
+        'Bug Reports': 'https://github.com/your-org/ab-translator/issues',
+        'Source': 'https://github.com/your-org/ab-translator',
+        'Documentation': 'https://github.com/your-org/ab-translator/blob/main/README.md',
     },
 )
