@@ -1,0 +1,10 @@
+LICENSE
+README.md
+setup.py
+ab_race_translator.egg-info/PKG-INFO
+ab_race_translator.egg-info/SOURCES.txt
+ab_race_translator.egg-info/dependency_links.txt
+ab_race_translator.egg-info/entry_points.txt
+ab_race_translator.egg-info/not-zip-safe
+ab_race_translator.egg-info/requires.txt
+ab_race_translator.egg-info/top_level.txt

@@ -1,0 +1,2 @@
+[console_scripts]
+ab-race-translate = ab_race_translator.example_usage:main
