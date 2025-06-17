@@ -59,6 +59,7 @@ setup(
             'flake8>=6.0.0',
             'mypy>=1.0.0',
             'isort>=5.12.0',
+            'delta-spark==2.0.2'
         ],
         'build': [
             'build>=0.10.0',
