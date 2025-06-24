@@ -1,2 +1,0 @@
-[console_scripts]
-ab-translate = ab_translator.example_usage:main

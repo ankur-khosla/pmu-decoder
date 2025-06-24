@@ -106,6 +106,15 @@ class MessageParser:
         except Exception as e:
             return ("@|@", True, str(e))
     
+    @staticmethod
+    def translate_message_pmu_object(message):
+        try:
+            decoded_message_tuple = translate(message, True)
+            return (decoded_message_tuple, False, None)
+        except Exception as e:
+            return (tuple([None, None, None, None, None, None, 5001]), True, str(e))
+    
+
     @classmethod
     def parse(cls, message: str, is_cancel: bool = False) -> Row:
         decoded_message_tuple = cls.translate_message_pmu(message)
@@ -147,6 +156,58 @@ class MessageParser:
             errorFields=dict(zip(cls.error_fields, errors)),
             valueFields=dict(zip(cls.value_fields, casted_values))
         )
+    
+
+    @classmethod
+    def parse_object(cls, message: str, is_cancel: bool = False) -> Row:
+        decoded_message_tuple = cls.translate_message_pmu_object(message)
+        errors = [decoded_message_tuple[1], decoded_message_tuple[2]]
+        parts = decoded_message_tuple[0]
+        header_values = parts[:7] + [None] * (7 - len(parts)) if len(parts) < 7 else parts[:7]
+        values_tuple = parts[7:] if len(parts) >= 7 else tuple([None, None ])
+        value_flds = cls.value_fields if not is_cancel else cls.value_fields_cancel
+        value_parts = value_flds + [None] * (len(value_flds) - len(values_tuple)) if len(values_tuple) < len(value_flds) else value_flds
+
+        # Cast headers
+        header_casted = header_values
+        casted_values = value_parts
+
+        return Row(
+            headerFields=dict(zip(cls.header_fields, header_casted)),
+            errorFields=dict(zip(cls.error_fields, errors)),
+            valueFields=dict(zip(cls.value_fields, casted_values))
+        )
+    @classmethod
+    def get_udf_object(cls, is_cancel: bool = False):
+        # Create schema for header
+        header_struct = StructType([
+            StructField(name, StringType() if name in cls.string_fields else LongType(), True)
+            for name in cls.header_fields
+        ])
+        value_flds = cls.value_fields if not is_cancel else cls.value_fields_cancel
+        value_struct_fields = []
+        for name in value_flds:
+            if name in cls.string_fields:
+                value_struct_fields.append(StructField(name, StringType(), True))
+            elif name in cls.timestamp_fields:
+                value_struct_fields.append(StructField(name, TimestampType(), True))
+            elif name in cls.decimal_fields:
+                value_struct_fields.append(StructField(name, DoubleType(), True))
+            else:
+                value_struct_fields.append(StructField(name, LongType(), True))
+        errors = StructType([
+            StructField("is_error", BooleanType(), nullable=False),
+            StructField("error_details", StringType(), nullable=True)
+        ])
+
+        full_schema = StructType([
+            StructField("headerFields", header_struct, True),
+            StructField("errors", errors, True),
+            StructField("valueFields", StructType(value_struct_fields), True),
+        ])
+
+        return udf(cls.parse_object, full_schema)
+
 
     @classmethod
     def get_udf(cls, is_cancel: bool = False):

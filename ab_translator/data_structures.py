@@ -31,6 +31,7 @@ from ctypes import (
 # unsigned int          -> c_uint
 # __time32_t            -> c_int32
 # LONGLONG              -> c_longlong
+# unsigned long long    -> c_ulonglong
 
 # 
 # FOR Payload Header
@@ -534,7 +535,7 @@ class BETLOTMD(LittleEndianStructure):
     """
     _pack_ = 1
     _fields_ = [
-        ("odivdu", c_longlong),  # online dividend in cents
+        ("odivdu", c_ulonglong),  # online dividend in cents
         ("drrfdbu", c_ubyte),    # number of draws refunded
         ("drselbu", c_ubyte),    # # of draws selected
         ("drrembu", c_ubyte),    # # of draws remaining
@@ -1601,7 +1602,7 @@ class EXTDTAB(LittleEndianStructure):
     _pack_ = 1
     _fields_ = [
         ("extdtcomm", EXTDTCOMMAB),
-        ("txnidd",    c_longlong),
+        ("txnidd",    c_ulonglong),
     ]
 
 class EXTDTRLS(LittleEndianStructure):

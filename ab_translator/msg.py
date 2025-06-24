@@ -7,13 +7,9 @@ class Msg:
         self.m_iMsgMonth = 0
         self.m_iMsgDay = 0
         self.m_iMsgErr = 0
-
         self.m_iBufSize = msg_size if msg_size > 0 else 8000
-
         self.m_iMsgCode = 0
-
         self.m_cpBuf = bytearray(msg_size)
-
         self.m_iSysNo = 0
         self.m_iCustSession = 0
         self.SellingDate = ""

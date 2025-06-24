@@ -4,7 +4,14 @@ ACP02 = 21
 
 # Message Type Definition, Only ABRace / ABCan related is migrated
 LOGAB_CODE_RAC = 6
+LOGAB_CODE_LOT = 7
 LOGAB_CODE_CAN = 8
+LOGAB_CODE_DEP = 11
+LOGAB_CODE_SB = 15
+LOGAB_CODE_EFT_MISC = 28
+LOGAB_CODE_BATDEP = 301
+LOGAB_CODE_ERR = 50001
+
 
 LOGAB_SRC_VOICE      = 1    # voice
 LOGAB_SRC_CIT        = 2    # cit, use LOGAB_SOURCE_DID
