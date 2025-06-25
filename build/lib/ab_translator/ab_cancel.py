@@ -1,4 +1,4 @@
-import time
+from datetime import datetime, date
 from ctypes import addressof, cast, POINTER
 
 from ab_translator.constants import *
@@ -27,8 +27,7 @@ class ABCancelTranslator(ABTranslator):
         self.m_cTsnFlag = pMlog.data.bt.can.byTsn1
         self.m_cCanPrevDay = pMlog.data.bt.can.canPrevDay
 
-        tm_date = time.localtime(pMlog.data.bt.can.businessDate)
-        self.m_sTranDate = f"{tm_date.tm_mday}-{MONTHS[tm_date.tm_mon-1]}-{tm_date.tm_year}"
+        self.m_sTranDate = datetime.fromtimestamp(pMlog.data.bt.can.businessDate)
 
         # Cancel Lottery
         if self.m_iCanCode in (ACU_CODE_LOT, ACU_CODE_LOT2,
@@ -145,19 +144,21 @@ class ABCancelTranslator(ABTranslator):
             bet_type = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.bettypebu
 
             # Default meeting date
-            md = ""
+            md_str = ""
             if bet_type == BETTYP_AUP:
-                md =       str(pMlog.data.bt.can.data.rac.tran.bet.d.var.a.md)
+                md_str =       str(pMlog.data.bt.can.data.rac.tran.bet.d.var.a.md)
                 self.m_cRLoc = pMlog.data.bt.rac.tran.bet.d.var.a.loc
                 self.m_cRDay = pMlog.data.bt.rac.tran.bet.d.var.a.day
             else:
-                md =       str(pMlog.data.bt.can.data.rac.tran.bet.d.var.es.md)
+                md_str =       str(pMlog.data.bt.can.data.rac.tran.bet.d.var.es.md)
                 self.m_cRLoc = pMlog.data.bt.can.data.rac.tran.bet.d.var.es.loc
                 self.m_cRDay = pMlog.data.bt.can.data.rac.tran.bet.d.var.es.day
 
-            if len(md) == 8:
-                yy, mm, dd = md[:4], md[4:6], md[6:8]
-                self.m_sRMeetDate = f"{yy}-{mm}-{dd} 00:00:00"
+    
+            if len(md_str) == 8:
+                self.m_sRMeetDate = datetime.strptime(md_str, "%Y%m%d")
+            else:
+                self.m_sRMeetDate = ""
 
             self.m_cRType    = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.bettypebu
             self.m_iRUnitBet = pMlog.data.bt.can.data.rac.tran.bet.d.hdr.betinvcomb.flexi.baseinv
@@ -188,10 +189,7 @@ class ABCancelTranslator(ABTranslator):
             self.m_iSSrcSell = pMlog.data.bt.can.data.sb.bet.tran.srcbu
             self.m_iSUnitBet = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.betinvcomb.flexi.baseinv
             self.m_iSTtlCost = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.costlu
-
-            s_time = time.localtime(pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.sellTime)
-            self.m_sSSelltime = f"{s_time.tm_mday}-" + \
-                                 f"{MONTHS[s_time.tm_mon-1]}-{s_time.tm_year}" if s_time else ""
+            self.m_sSSelltime = datetime.fromtimestamp(pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.sellTime)
             self.m_cSBetType = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.bettypebu
         else:
             self.m_iSSrcSell = 0
@@ -203,8 +201,7 @@ class ABCancelTranslator(ABTranslator):
         # Cancel Deposit
         if self.m_iCanCode in (ACU_CODE_DEP, ACU_CODE_DEP_TSN2):
             # dep = pMlog.data.bt.can.data.dep.tran
-            h_time = time.localtime(pMlog.data.bt.can.data.dep.tran.holdtime)
-            self.m_sDHoldTime = f"{h_time.tm_mday}-{MONTHS[h_time.tm_mon-1]}-{h_time.tm_year}"
+            self.m_sDHoldTime = datetime.fromtimestamp(pMlog.data.bt.can.data.dep.tran.holdtime)
             self.m_iDAmount       = pMlog.data.bt.can.data.dep.tran.amountdu
             self.m_iDSvcCharge    = pMlog.data.bt.can.data.dep.tran.chargedu
             self.m_cDType         = pMlog.data.bt.can.data.dep.tran.typebu
@@ -246,13 +243,18 @@ class ABCancelTranslator(ABTranslator):
             f"{self.m_iLTtlCost}~|~"
         )
 
+        if isinstance(self.m_sRMeetDate, (datetime, date)):
+            str_m_sRMeetDate = self.m_sRMeetDate.strftime("%Y-%m-%d 00:00:00")
+        else:
+            str_m_sRMeetDate = ""
+
         outputStr += (
             f"{self.m_iRMeetIndex}~|~"
             f"{self.m_cRErrRaceNo}~|~"
             f"{self.m_cRErrSel}~|~"
             f"{self.m_iROffset}~|~"
             f"{self.m_cRSrcSell}~|~"
-            f"{self.m_sRMeetDate}~|~"
+            f"{str_m_sRMeetDate}~|~"
             f"{self.m_cRLoc}~|~"
             f"{self.m_cRDay}~|~"
             f"{self.m_cRType}~|~"
@@ -269,16 +271,25 @@ class ABCancelTranslator(ABTranslator):
             f"{self.m_cWCanFlag}~|~"
         )
 
+        if isinstance(self.m_sSSelltime, (datetime, date)):
+            str_m_sSSelltime = self.m_sSSelltime.strftime("%d-%b-%Y")
+        else:
+            str_m_sSSelltime = ""
+
         outputStr += (
             f"{self.m_iSSrcSell}~|~"
             f"{self.m_iSUnitBet}~|~"
             f"{self.m_iSTtlCost}~|~"
-            f"{self.m_sSSelltime}~|~"
+            f"{str_m_sSSelltime}~|~"
             f"{self.m_cSBetType}~|~"
         )
 
+        if isinstance(self.m_sDHoldTime, (datetime, date)):
+            str_m_sDHoldTime = self.m_sDHoldTime.strftime("%d-%b-%Y")
+        else:
+            str_m_sDHoldTime = ""
         outputStr += (
-            f"{self.m_sDHoldTime}~|~"
+            f"{str_m_sDHoldTime}~|~"
             f"{self.m_iDAmount}~|~"
             f"{self.m_iDSvcCharge}~|~"
             f"{self.m_cDType}~|~"
@@ -290,7 +301,7 @@ class ABCancelTranslator(ABTranslator):
             f"{self.m_iNoOfDrawSelected}~|~"
             f"{self.m_iNoOfDrawRemain}~|~"
             f"{self.m_cCanPrevDay}~|~"
-            f"{self.m_sTranDate}"
+            f"{self.m_sTranDate.strftime("%-d-%b-%Y")}"
         )
 
         return self.translate_header_to_string() + outputStr

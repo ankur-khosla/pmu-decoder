@@ -1,8 +1,8 @@
 import ctypes
-import time
 
 from dataclasses import dataclass
 from collections import defaultdict
+from datetime import datetime
 
 from ab_translator.constants import *
 from ab_translator.data_structures import LOGAB
@@ -17,7 +17,7 @@ class HeaderData:
     # Main fields with ~|~ delimiter
     m_iSysNo: int = 0
     m_iMsgOrderNo: int = 0
-    m_sSellingDate: str = ""
+    m_sSellingDate: datetime = datetime.fromtimestamp(0)
     m_sSysName: str = ""
     m_iMsgSize: int = 0
     m_iMsgCode: int = 0
@@ -50,7 +50,7 @@ class HeaderData:
     m_iTrainAcct: int = 0
     m_iSessionInfo: int = 0
     m_iSourceType: int = 0
-    m_sTime: str = ""
+    m_sTime: datetime = datetime.fromtimestamp(0)
     m_iMatNo: int = 0
     m_cVoiceFENo: int = 0
     m_iVoiceTermNo: int = 0
@@ -81,22 +81,10 @@ class ABTranslator:
         # Initialize all the fields that were in the C++ code
         self.data_header = HeaderData()        
         self.m_iLoggerMsgOrderNo = 0
-        self.m_sMonths = MONTHS
         self.terminal_type_matrix = defaultdict(lambda: defaultdict(int))
 
         # Load Values to HeaderData
         self.packHeader()
-
-    def format_msg_time(self, msg_time: int) -> str:
-        tm_time = time.localtime(msg_time)
-        return (
-            f"{tm_time.tm_mday:02d}-"
-            f"{MONTHS[tm_time.tm_mon - 1]}-"
-            f"{tm_time.tm_year} "
-            f"{tm_time.tm_hour:02d}:"
-            f"{tm_time.tm_min:02d}:"
-            f"{tm_time.tm_sec:02d}"
-        )
     
     def get_terminal_type(self):
 
@@ -139,7 +127,7 @@ class ABTranslator:
         output_str += (
             f"{self.data_header.m_sSysName}~|~"
             f"{self.data_header.m_iMsgOrderNo}~|~"
-            f"{self.data_header.m_sSellingDate}~|~"
+            f"{self.data_header.m_sSellingDate.strftime("%d-%b-%Y")}~|~"
             f"{self.data_header.m_iMsgSize}~|~"
             f"{self.data_header.m_iMsgCode}~|~"
             f"{self.data_header.m_iErrCode}~|~"
@@ -152,7 +140,7 @@ class ABTranslator:
             f"{self.data_header.m_iOverflowNo}~|~"
             f"{self.data_header.m_iOffsetUnit}~|~"
             f"{self.data_header.m_iTranNo}~|~"
-            f"{self.data_header.m_sTime}~|~"
+            f"{self.data_header.m_sTime.strftime("%d-%b-%Y %H:%M:%S")}~|~"
             f"{last_log_seq_val}~|~"
             f"{self.data_header.m_iMsnNo}~|~"
             f"{self.data_header.m_iExtSysType}~|~"
@@ -285,9 +273,11 @@ class ABTranslator:
         self.data_header.m_iSysNo = pMsg.m_iSysNo
         self.data_header.m_iMsgOrderNo = self.m_iLoggerMsgOrderNo
         self.data_header.m_sSysName = pMsg.m_iSysName
-
-        # Format selling date
-        self.data_header.m_sSellingDate = f"{pMsg.m_iMsgDay:02d}-{self.m_sMonths[pMsg.m_iMsgMonth-1]}-{pMsg.m_iMsgYear}"
+        self.data_header.m_sSellingDate = datetime(
+            year = pMsg.m_iMsgYear,
+            month = pMsg.m_iMsgMonth,
+            day = pMsg.m_iMsgDay
+        )
         self.data_header.m_iMsgSize = ctypes.c_uint(pMlog.hdr.sizew).value
         self.data_header.m_iMsgCode = ctypes.c_uint(pMlog.hdr.codewu).value
         self.data_header.m_iErrCode = ctypes.c_uint(pMsg.m_iMsgErrwu).value
@@ -320,7 +310,7 @@ class ABTranslator:
         self.data_header.m_iTrainAcct = ctypes.c_ushort(pMlog.hdr.train1).value
         self.data_header.m_iSessionInfo = ctypes.c_ushort(pMlog.hdr.sessionInfo1).value
         self.data_header.m_iSourceType = ctypes.c_ubyte(pMlog.hdr.source.srcTypebu).value
-        self.data_header.m_sTime = self.format_msg_time(pMsg.m_iMsgTime)
+        self.data_header.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime)
     
         # ABMsgTranslator.cpp: line 231
         def pid_to_asc(pidwu: int) -> str:

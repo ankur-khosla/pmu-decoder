@@ -64,12 +64,6 @@ DEV_TYP_WOSBS    = 29  # Window Phone (MSR2015)
 DEV_TYP_MASBAI   = 30  # MASBAI (APR2021)
 DEV_TYP_MASBAA   = 31  # MASBAA (APR2021)
 
-
-MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-]
-
 BETTYP_WINPLA        = 0
 BETTYP_WIN           = 1
 BETTYP_PLA           = 2

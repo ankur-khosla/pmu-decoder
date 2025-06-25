@@ -88,7 +88,7 @@ def translate_from_bytes(hex_data: bytes, tuple_output: bool = False):
     return get_string_header(pHdr) + translator.translate_to_string()
 
     
-def translate(input_data: str, tuple_output: bool = False) -> str:
+def translate(input_data: str, tuple_output: bool = False):
     hex_data = bytes.fromhex(input_data)
     return translate_from_bytes(hex_data, tuple_output)
 

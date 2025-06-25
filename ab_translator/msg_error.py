@@ -59,7 +59,11 @@ class MsgError():
 
         self.m_sSysName = pMsg.m_iSysName
 
-        self.m_sSellingDate = f"{pMsg.m_iMsgDay:02d}-{MONTHS[pMsg.m_iMsgMonth-1]}-{pMsg.m_iMsgYear}"
+        self.m_sSellingDate = datetime(
+            year = pMsg.m_iMsgYear,
+            month = pMsg.m_iMsgMonth,
+            day = pMsg.m_iMsgDay
+        )
 
         self.m_iMsgSize = pMlog.hdr.sizew
         self.m_iMsgCode = pMlog.hdr.codewu
@@ -90,9 +94,7 @@ class MsgError():
         self.m_iTrainAcct = pMlog.hdr.train1
         self.m_iSessionInfo = pMlog.hdr.sessionInfo1
         self.m_iSourceType = pMlog.hdr.source.srcTypebu
-        # Format time
-        tm_time = datetime.fromtimestamp(pMsg.m_iMsgTime)
-        self.m_sTime = f"{tm_time.day:02d}-{MONTHS[tm_time.month-1]}-{tm_time.year} {tm_time.hour:02d}:{tm_time.minute:02d}:{tm_time.second:02d}"
+        self.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime)
         
         # Voice handling
         if self.m_iSourceType == LOGAB_SRC_VOICE:
@@ -260,7 +262,7 @@ class MsgError():
             f"{LOGAB_CODE_ERR}@|@"
             f"{self.m_sSysName}~|~"
             f"{self.m_iMsgOrderNo}~|~"
-            f"{self.m_sSellingDate}~|~"
+            f"{self.m_sSellingDate.strftime("%d-%b-%Y")}~|~"
             f"{self.m_iMsgSize}~|~"
             f"{self.m_iMsgCode}~|~"
             f"{self.m_iErrCode}~|~"
@@ -273,7 +275,7 @@ class MsgError():
             f"{self.m_iOverflowNo}~|~"
             f"{self.m_iOffsetUnit}~|~"
             f"{self.m_iTranNo}~|~"
-            f"{self.m_sTime}~|~"
+            f"{self.m_sTime.strftime("%d-%b-%Y %H:%M:%S")}~|~"
             f"{last_log_seq_val}~|~"
             f"{self.m_iMsnNo}~|~"
             f"{self.m_iExtSysType}~|~"

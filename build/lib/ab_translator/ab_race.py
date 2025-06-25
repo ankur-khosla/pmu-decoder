@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 from ctypes import POINTER, cast, pointer, c_ubyte, c_ulonglong
 
 from ab_translator.constants import *
@@ -84,7 +85,7 @@ class ABRaceTranslator(ABTranslator):
 
             self.m_iUnitBetTenK = int(tmp2)
 
-        self.m_sSellTime = self.format_msg_time(pMsg.m_iMsgSellTime)
+        self.m_sSellTime = datetime.fromtimestamp(pMsg.m_iMsgSellTime)
         self.m_cBetType = pMlog.data.bt.rac.tran.bet.d.hdr.bettypebu
         self.m_sBetType = self.get_bet_type(self.m_cBetType)
 
@@ -95,7 +96,9 @@ class ABRaceTranslator(ABTranslator):
             md_val = pMlog.data.bt.rac.tran.bet.d.var.a.md
             md_str = f"{md_val:08d}"
             if len(md_str) == 8:
-                self.m_sMeetDate = f"{md_str[:4]}-{md_str[4:6]}-{md_str[6:8]} 00:00:00"
+                self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d")
+            else:
+                self.m_sMeetDate = datetime.fromtimestamp(0)
 
             self.m_cLoc = pMlog.data.bt.rac.tran.bet.d.var.a.loc
             self.m_cDay = pMlog.data.bt.rac.tran.bet.d.var.a.day
@@ -128,7 +131,9 @@ class ABRaceTranslator(ABTranslator):
             md_val = pMlog.data.bt.rac.tran.bet.d.var.es.md
             md_str = f"{md_val:08d}"
             if len(md_str) == 8:
-                self.m_sMeetDate = f"{md_str[:4]}-{md_str[4:6]}-{md_str[6:8]} 00:00:00"
+                self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d")
+            else:
+                self.m_sMeetDate = datetime.fromtimestamp(0)
 
             self.m_cLoc = pMlog.data.bt.rac.tran.bet.d.var.es.loc
             self.m_cDay = pMlog.data.bt.rac.tran.bet.d.var.es.day
@@ -157,13 +162,13 @@ class ABRaceTranslator(ABTranslator):
 
     def translate_to_string(self) -> str:
         outputStr = (
-            f"{self.m_sMeetDate}~|~"
+            f"{self.m_sMeetDate.strftime("%Y-%m-%d 00:00:00")}~|~"
             f"{self.m_cLoc}~|~"
             f"{self.m_cDay}~|~"
             f"{self.m_itotalPay}~|~"
             f"{self.m_iUnitBetTenK}~|~"
             f"{self.m_iTotalCost}~|~"
-            f"{self.m_sSellTime}~|~"
+            f"{self.m_sSellTime.strftime("%d-%b-%Y %H:%M:%S")}~|~"
             f"{self.m_sBetType}~|~"
             f" ~|~"
         )
