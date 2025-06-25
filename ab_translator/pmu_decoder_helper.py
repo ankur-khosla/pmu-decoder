@@ -166,7 +166,7 @@ class MessageParser:
         header_values = parts[:7] + [None] * (7 - len(parts)) if len(parts) < 7 else parts[:7]
         values_tuple = parts[7:] if len(parts) >= 7 else tuple([None, None ])
         value_flds = cls.value_fields if not is_cancel else cls.value_fields_cancel
-        value_parts = value_flds + [None] * (len(value_flds) - len(values_tuple)) if len(values_tuple) < len(value_flds) else value_flds
+        value_parts = values_tuple + [None] * (len(value_flds) - len(values_tuple)) if len(values_tuple) < len(value_flds) else values_tuple
 
         # Cast headers
         header_casted = header_values
