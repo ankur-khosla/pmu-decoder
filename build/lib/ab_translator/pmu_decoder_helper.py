@@ -113,6 +113,10 @@ class MessageParser:
             return (decoded_message_tuple, False, None)
         except Exception as e:
             return (tuple([None, None, None, None, None, None, 5001]), True, str(e))
+        
+    @classmethod
+    def parse_cancel(cls, message: str, is_cancel: bool = False) -> Row:
+        return cls.parse(message, True)
     
 
     @classmethod
@@ -154,10 +158,13 @@ class MessageParser:
         return Row(
             headerFields=dict(zip(cls.header_fields, header_casted)),
             errorFields=dict(zip(cls.error_fields, errors)),
-            valueFields=dict(zip(cls.value_fields, casted_values))
+            valueFields=dict(zip(value_flds, casted_values))
         )
+     
+    @classmethod
+    def parse_cancel_object(cls, message: str, is_cancel: bool = False) -> Row:
+        return cls.parse_object(message, True)
     
-
     @classmethod
     def parse_object(cls, message: str, is_cancel: bool = False) -> Row:
         decoded_message_tuple = cls.translate_message_pmu_object(message)
@@ -175,8 +182,9 @@ class MessageParser:
         return Row(
             headerFields=dict(zip(cls.header_fields, header_casted)),
             errorFields=dict(zip(cls.error_fields, errors)),
-            valueFields=dict(zip(cls.value_fields, casted_values))
+            valueFields=dict(zip(value_flds, casted_values))
         )
+    
     @classmethod
     def get_udf_object(cls, is_cancel: bool = False):
         # Create schema for header
@@ -206,7 +214,7 @@ class MessageParser:
             StructField("valueFields", StructType(value_struct_fields), True),
         ])
 
-        return udf(cls.parse_object, full_schema)
+        return udf(cls.parse_object if not is_cancel else cls.parse_cancel_object, full_schema)
 
 
     @classmethod
@@ -238,4 +246,4 @@ class MessageParser:
             StructField("valueFields", StructType(value_struct_fields), True),
         ])
 
-        return udf(cls.parse, full_schema)
+        return udf(cls.parse if not is_cancel else cls.parse_cancel, full_schema)
