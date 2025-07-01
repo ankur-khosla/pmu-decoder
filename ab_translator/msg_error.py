@@ -95,7 +95,7 @@ class MsgError():
         self.m_iTrainAcct = pMlog.hdr.train1
         self.m_iSessionInfo = pMlog.hdr.sessionInfo1
         self.m_iSourceType = pMlog.hdr.source.srcTypebu
-        self.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
+        self.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime, tz=ZoneInfo("Asia/Hong_Kong"))
         
         # Voice handling
         if self.m_iSourceType == LOGAB_SRC_VOICE:

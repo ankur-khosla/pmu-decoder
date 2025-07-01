@@ -311,7 +311,7 @@ class ABTranslator:
         self.data_header.m_iTrainAcct = ctypes.c_ushort(pMlog.hdr.train1).value
         self.data_header.m_iSessionInfo = ctypes.c_ushort(pMlog.hdr.sessionInfo1).value
         self.data_header.m_iSourceType = ctypes.c_ubyte(pMlog.hdr.source.srcTypebu).value
-        self.data_header.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
+        self.data_header.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime, tz=ZoneInfo("Asia/Hong_Kong"))
     
         # ABMsgTranslator.cpp: line 231
         def pid_to_asc(pidwu: int) -> str:

@@ -86,7 +86,7 @@ class ABRaceTranslator(ABTranslator):
 
             self.m_iUnitBetTenK = int(tmp2)
 
-        self.m_sSellTime = datetime.fromtimestamp(pMsg.m_iMsgSellTime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
+        self.m_sSellTime = datetime.fromtimestamp(pMsg.m_iMsgSellTime, tz=ZoneInfo("Asia/Hong_Kong"))
         self.m_cBetType = pMlog.data.bt.rac.tran.bet.d.hdr.bettypebu
         self.m_sBetType = self.get_bet_type(self.m_cBetType)
 
