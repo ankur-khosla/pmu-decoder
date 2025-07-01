@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from ctypes import addressof, cast, POINTER
+from zoneinfo import ZoneInfo
 
 from ab_translator.constants import *
 from ab_translator.ab_translator import ABTranslator
@@ -27,7 +28,7 @@ class ABCancelTranslator(ABTranslator):
         self.m_cTsnFlag = pMlog.data.bt.can.byTsn1
         self.m_cCanPrevDay = pMlog.data.bt.can.canPrevDay
 
-        self.m_sTranDate = datetime.fromtimestamp(pMlog.data.bt.can.businessDate)
+        self.m_sTranDate = datetime.fromtimestamp(pMlog.data.bt.can.businessDate).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
 
         # Cancel Lottery
         if self.m_iCanCode in (ACU_CODE_LOT, ACU_CODE_LOT2,
@@ -156,7 +157,7 @@ class ABCancelTranslator(ABTranslator):
 
     
             if len(md_str) == 8:
-                self.m_sRMeetDate = datetime.strptime(md_str, "%Y%m%d")
+                self.m_sRMeetDate = datetime.strptime(md_str, "%Y%m%d").replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
             else:
                 self.m_sRMeetDate = ""
 
@@ -189,7 +190,7 @@ class ABCancelTranslator(ABTranslator):
             self.m_iSSrcSell = pMlog.data.bt.can.data.sb.bet.tran.srcbu
             self.m_iSUnitBet = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.betinvcomb.flexi.baseinv
             self.m_iSTtlCost = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.costlu
-            self.m_sSSelltime = datetime.fromtimestamp(pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.sellTime)
+            self.m_sSSelltime = datetime.fromtimestamp(pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.sellTime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
             self.m_cSBetType = pMlog.data.bt.can.data.sb.bet.tran.bet.hdr.bettypebu
         else:
             self.m_iSSrcSell = 0
@@ -201,7 +202,7 @@ class ABCancelTranslator(ABTranslator):
         # Cancel Deposit
         if self.m_iCanCode in (ACU_CODE_DEP, ACU_CODE_DEP_TSN2):
             # dep = pMlog.data.bt.can.data.dep.tran
-            self.m_sDHoldTime = datetime.fromtimestamp(pMlog.data.bt.can.data.dep.tran.holdtime)
+            self.m_sDHoldTime = datetime.fromtimestamp(pMlog.data.bt.can.data.dep.tran.holdtime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
             self.m_iDAmount       = pMlog.data.bt.can.data.dep.tran.amountdu
             self.m_iDSvcCharge    = pMlog.data.bt.can.data.dep.tran.chargedu
             self.m_cDType         = pMlog.data.bt.can.data.dep.tran.typebu

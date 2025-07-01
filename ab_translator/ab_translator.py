@@ -1,8 +1,9 @@
 import ctypes
 
 from dataclasses import dataclass
-from collections import defaultdict
 from datetime import datetime
+from collections import defaultdict
+from zoneinfo import ZoneInfo
 
 from ab_translator.constants import *
 from ab_translator.data_structures import LOGAB
@@ -17,7 +18,7 @@ class HeaderData:
     # Main fields with ~|~ delimiter
     m_iSysNo: int = 0
     m_iMsgOrderNo: int = 0
-    m_sSellingDate: datetime = datetime.fromtimestamp(0)
+    m_sSellingDate: datetime = datetime.fromtimestamp(0,tz=ZoneInfo("UTC"))
     m_sSysName: str = ""
     m_iMsgSize: int = 0
     m_iMsgCode: int = 0
@@ -50,7 +51,7 @@ class HeaderData:
     m_iTrainAcct: int = 0
     m_iSessionInfo: int = 0
     m_iSourceType: int = 0
-    m_sTime: datetime = datetime.fromtimestamp(0)
+    m_sTime: datetime = datetime.fromtimestamp(0, tz=ZoneInfo("UTC"))
     m_iMatNo: int = 0
     m_cVoiceFENo: int = 0
     m_iVoiceTermNo: int = 0
@@ -277,7 +278,7 @@ class ABTranslator:
             year = pMsg.m_iMsgYear,
             month = pMsg.m_iMsgMonth,
             day = pMsg.m_iMsgDay
-        )
+        ).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
         self.data_header.m_iMsgSize = ctypes.c_uint(pMlog.hdr.sizew).value
         self.data_header.m_iMsgCode = ctypes.c_uint(pMlog.hdr.codewu).value
         self.data_header.m_iErrCode = ctypes.c_uint(pMsg.m_iMsgErrwu).value
@@ -310,7 +311,7 @@ class ABTranslator:
         self.data_header.m_iTrainAcct = ctypes.c_ushort(pMlog.hdr.train1).value
         self.data_header.m_iSessionInfo = ctypes.c_ushort(pMlog.hdr.sessionInfo1).value
         self.data_header.m_iSourceType = ctypes.c_ubyte(pMlog.hdr.source.srcTypebu).value
-        self.data_header.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime)
+        self.data_header.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
     
         # ABMsgTranslator.cpp: line 231
         def pid_to_asc(pidwu: int) -> str:

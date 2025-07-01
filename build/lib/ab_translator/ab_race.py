@@ -1,5 +1,6 @@
 import math
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from ctypes import POINTER, cast, pointer, c_ubyte, c_ulonglong
 
 from ab_translator.constants import *
@@ -85,7 +86,7 @@ class ABRaceTranslator(ABTranslator):
 
             self.m_iUnitBetTenK = int(tmp2)
 
-        self.m_sSellTime = datetime.fromtimestamp(pMsg.m_iMsgSellTime)
+        self.m_sSellTime = datetime.fromtimestamp(pMsg.m_iMsgSellTime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
         self.m_cBetType = pMlog.data.bt.rac.tran.bet.d.hdr.bettypebu
         self.m_sBetType = self.get_bet_type(self.m_cBetType)
 
@@ -96,9 +97,9 @@ class ABRaceTranslator(ABTranslator):
             md_val = pMlog.data.bt.rac.tran.bet.d.var.a.md
             md_str = f"{md_val:08d}"
             if len(md_str) == 8:
-                self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d")
+                self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d").replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
             else:
-                self.m_sMeetDate = datetime.fromtimestamp(0)
+                self.m_sMeetDate = datetime.fromtimestamp(0, tz=ZoneInfo("UTC"))
 
             self.m_cLoc = pMlog.data.bt.rac.tran.bet.d.var.a.loc
             self.m_cDay = pMlog.data.bt.rac.tran.bet.d.var.a.day
@@ -131,9 +132,9 @@ class ABRaceTranslator(ABTranslator):
             md_val = pMlog.data.bt.rac.tran.bet.d.var.es.md
             md_str = f"{md_val:08d}"
             if len(md_str) == 8:
-                self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d")
+                self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d").replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
             else:
-                self.m_sMeetDate = datetime.fromtimestamp(0)
+                self.m_sMeetDate = datetime.fromtimestamp(0, tz=ZoneInfo("UTC"))
 
             self.m_cLoc = pMlog.data.bt.rac.tran.bet.d.var.es.loc
             self.m_cDay = pMlog.data.bt.rac.tran.bet.d.var.es.day

@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import ctypes
 
 from ab_translator.ab_translator import ABTranslator
@@ -63,7 +64,7 @@ class MsgError():
             year = pMsg.m_iMsgYear,
             month = pMsg.m_iMsgMonth,
             day = pMsg.m_iMsgDay
-        )
+        ).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
 
         self.m_iMsgSize = pMlog.hdr.sizew
         self.m_iMsgCode = pMlog.hdr.codewu
@@ -94,7 +95,7 @@ class MsgError():
         self.m_iTrainAcct = pMlog.hdr.train1
         self.m_iSessionInfo = pMlog.hdr.sessionInfo1
         self.m_iSourceType = pMlog.hdr.source.srcTypebu
-        self.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime)
+        self.m_sTime = datetime.fromtimestamp(pMsg.m_iMsgTime).replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
         
         # Voice handling
         if self.m_iSourceType == LOGAB_SRC_VOICE:
