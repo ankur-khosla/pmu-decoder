@@ -18,7 +18,7 @@ class HeaderData:
     # Main fields with ~|~ delimiter
     m_iSysNo: int = 0
     m_iMsgOrderNo: int = 0
-    m_sSellingDate: datetime = datetime.fromtimestamp(0,tz=ZoneInfo("UTC"))
+    m_sSellingDate: datetime = datetime.fromtimestamp(0,tz=ZoneInfo("Asia/Hong_Kong"))
     m_sSysName: str = ""
     m_iMsgSize: int = 0
     m_iMsgCode: int = 0
@@ -51,7 +51,7 @@ class HeaderData:
     m_iTrainAcct: int = 0
     m_iSessionInfo: int = 0
     m_iSourceType: int = 0
-    m_sTime: datetime = datetime.fromtimestamp(0, tz=ZoneInfo("UTC"))
+    m_sTime: datetime = datetime.fromtimestamp(0, tz=ZoneInfo("Asia/Hong_Kong"))
     m_iMatNo: int = 0
     m_cVoiceFENo: int = 0
     m_iVoiceTermNo: int = 0

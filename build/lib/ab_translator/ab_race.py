@@ -99,7 +99,7 @@ class ABRaceTranslator(ABTranslator):
             if len(md_str) == 8:
                 self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d").replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
             else:
-                self.m_sMeetDate = datetime.fromtimestamp(0, tz=ZoneInfo("UTC"))
+                self.m_sMeetDate = datetime.fromtimestamp(0, tz=ZoneInfo("Asia/Hong_Kong"))
 
             self.m_cLoc = pMlog.data.bt.rac.tran.bet.d.var.a.loc
             self.m_cDay = pMlog.data.bt.rac.tran.bet.d.var.a.day
@@ -134,7 +134,7 @@ class ABRaceTranslator(ABTranslator):
             if len(md_str) == 8:
                 self.m_sMeetDate = datetime.strptime(md_str, "%Y%m%d").replace(tzinfo=ZoneInfo("Asia/Hong_Kong"))
             else:
-                self.m_sMeetDate = datetime.fromtimestamp(0, tz=ZoneInfo("UTC"))
+                self.m_sMeetDate = datetime.fromtimestamp(0, tz=ZoneInfo("Asia/Hong_Kong"))
 
             self.m_cLoc = pMlog.data.bt.rac.tran.bet.d.var.es.loc
             self.m_cDay = pMlog.data.bt.rac.tran.bet.d.var.es.day
